@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/fuente/">
+    <Project Path="fuente/EyeYul.Aplicacion/EyeYul.Aplicacion.csproj" />
+    <Project Path="fuente/EyeYul.Dominio/EyeYul.Dominio.csproj" />
+    <Project Path="fuente/EyeYul.Infraestructura/EyeYul.Infraestructura.csproj" />
+    <Project Path="fuente/EyeYul.NativeHost/EyeYul.NativeHost.csproj" />
+    <Project Path="fuente/EyeYul.Presentacion/EyeYul.Presentacion.csproj" />
+  </Folder>
+</Solution>
