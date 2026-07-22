@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x220" name="Navigation" subtitle="Sidebar nav item, segmented tabs" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:16px;background:#fbf9f6;font-family:var(--font-sans);}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { SidebarNavItem, SegmentedTabs } = window.EyeYul_491522;
+function Demo() {
+  const [tab, setTab] = React.useState('posture');
+  const [theme, setTheme] = React.useState('light');
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:18}}>
+      <div style={{width:220, display:'flex', flexDirection:'column', gap:4, background:'#f4f2ee', padding:10, borderRadius:16}}>
+        <SidebarNavItem icon={<span>&#128200;</span>} label="Vista General" active />
+        <SidebarNavItem icon={<span>&#127942;</span>} label="Historial de Uso" />
+      </div>
+      <SegmentedTabs options={[{label:'Postura Corporal', value:'posture'},{label:'Parpadeo Frecuente', value:'blink'}]} value={tab} onChange={setTab} />
+      <SegmentedTabs options={[{label:'Claro', value:'light'},{label:'Oscuro', value:'dark'}]} value={theme} onChange={setTheme} />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

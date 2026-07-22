@@ -1,0 +1,11 @@
+<!-- @dsCard group="Brand" viewport="700x140" name="Shadows & Blur" subtitle="Soft warm-tinted shadows; blur only for immersive overlays" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;padding:20px;background:#f5f1ea;display:flex;gap:20px;font-family:var(--font-sans);font-size:10px;color:#6b7280;}
+.card{width:130px;height:80px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;box-sizing:border-box;}
+</style></head>
+<body>
+<div class="card" style="box-shadow:var(--shadow-sm);border:1px solid #e5e7eb;">border only<br>(inline cards)</div>
+<div class="card" style="box-shadow:var(--shadow-md-light);">elevated shadow<br>(app window, toasts)</div>
+<div class="card" style="background:rgba(255,255,255,0.6);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.4);">blur + transparency<br>(overlays only)</div>
+</body></html>

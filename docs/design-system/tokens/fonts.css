@@ -1,0 +1,5 @@
+/* EyeYul type families — sourced from the codebase's Google Fonts import
+   (index.css: Inter, JetBrains Mono, Space Grotesk via fonts.googleapis.com).
+   No local .ttf/.woff files were present in the attached codebase, so we
+   keep loading them from Google Fonts CDN rather than fabricating binaries. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');

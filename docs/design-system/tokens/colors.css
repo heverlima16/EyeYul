@@ -1,0 +1,88 @@
+/* EyeYul color tokens
+   Primary is the "Claude terracotta / bronze / clay sienna" palette the app's
+   own index.css swaps in for Tailwind's pink-* scale. Neutrals are warm
+   near-blacks/creams (not cool grays) in dark mode, warm off-whites in light. */
+:root {
+  /* ---- Primary (terracotta) ---- */
+  --color-primary-50:  #fdf5f2;
+  --color-primary-100: #fbebe5;
+  --color-primary-200: #f7d5ca;
+  --color-primary-300: #f1b6a4;
+  --color-primary-400: #e68d75;
+  --color-primary-500: #de7356; /* base */
+  --color-primary-600: #cb5b3e;
+  --color-primary-700: #a9472e;
+  --color-primary-800: #8c3c2a;
+  --color-primary-900: #753527;
+  --color-primary-950: #3f1911;
+
+  /* ---- Secondary accent (amber, used for posture/warning states) ---- */
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+
+  /* ---- Supporting semantic hues ---- */
+  --color-emerald-500: #10b981; /* success / "libre" strictness / license OK */
+  --color-blue-500:    #3b82f6; /* AFK / inactivity context */
+  --color-purple-500:  #a855f7; /* focus / "enfoque profundo" mode */
+
+  /* ---- Warm neutrals — LIGHT theme ---- */
+  --color-light-bg:        #fbf9f6;
+  --color-light-bg-alt:    #f5f1ea;
+  --color-light-surface:   #ffffff;
+  --color-light-surface-2: #f3e6d3; /* sidebar — warm tan/cream */
+  --color-light-border:    #e5e7eb; /* gray-200 */
+  --color-light-text:      #111827; /* gray-900 */
+  --color-light-text-2:    #4b5563; /* gray-600 */
+  --color-light-text-3:    #9ca3af; /* gray-400 */
+
+  /* ---- Warm neutrals — DARK theme (near-black bronze, not cool slate) ---- */
+  --color-dark-bg:         #14120e;
+  --color-dark-bg-alt:     #120f0c;
+  --color-dark-surface:    #1d1a15;   /* cards, panels */
+  --color-dark-surface-2:  #24211a;   /* raised cards */
+  --color-dark-surface-3:  #13110e;   /* sidebar / inputs */
+  --color-dark-border:     #2d2820;
+  --color-dark-border-2:   #373127;
+  --color-dark-text:       #ece5da;   /* warm cream */
+  --color-dark-text-2:     #a49987;
+  --color-dark-text-3:     #8c8273;
+  --color-dark-text-4:     #5e564a;
+
+  /* ---- Semantic aliases (light, default) ---- */
+  --surface-page:    var(--color-light-bg);
+  --surface-card:    var(--color-light-surface);
+  --surface-card-alt: var(--color-light-surface-2);
+  --surface-sunken:  #f9fafb;
+  --border-default:  var(--color-light-border);
+  --border-strong:   #d1d5db;
+  --text-primary:    var(--color-light-text);
+  --text-secondary:  var(--color-light-text-2);
+  --text-tertiary:   var(--color-light-text-3);
+  --accent:          var(--color-primary-500);
+  --accent-strong:   var(--color-primary-600);
+  --accent-soft:     var(--color-primary-100);
+  --accent-contrast: #ffffff;
+
+  --status-success:  var(--color-emerald-500);
+  --status-warning:  var(--color-amber-500);
+  --status-info:     var(--color-blue-500);
+  --status-danger:   #ef4444;
+}
+
+/* Dark theme scope — the app toggles this at the root wrapper (settings.theme) */
+[data-theme="dark"] {
+  --surface-page:     var(--color-dark-bg);
+  --surface-card:     var(--color-dark-surface-2);
+  --surface-card-alt: var(--color-dark-surface);
+  --surface-sunken:   var(--color-dark-surface-3);
+  --border-default:   var(--color-dark-border-2);
+  --border-strong:    #4d4436;
+  --text-primary:     var(--color-dark-text);
+  --text-secondary:   var(--color-dark-text-2);
+  --text-tertiary:    var(--color-dark-text-3);
+  --accent:           var(--color-primary-500);
+  --accent-strong:    var(--color-primary-400);
+  --accent-soft:      rgba(222, 115, 86, 0.1);
+  --accent-contrast:  #ffffff;
+}

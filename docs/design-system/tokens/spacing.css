@@ -1,0 +1,29 @@
+/* EyeYul spacing + radius + shadow tokens */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Corner radii — the app leans on very round, "soft capsule" geometry */
+  --radius-sm: 8px;   /* small chips */
+  --radius-md: 12px;  /* inputs, small buttons */
+  --radius-lg: 16px;  /* cards, buttons */
+  --radius-xl: 24px;  /* panels */
+  --radius-2xl: 32px; /* app window / hero panel */
+  --radius-full: 9999px; /* pills, toggles, avatars */
+
+  /* Shadows — soft & warm-tinted, never harsh black */
+  --shadow-sm: 0 4px 15px rgba(222, 115, 86, 0.05);
+  --shadow-md-light: 0 24px 60px rgba(0, 0, 0, 0.08);
+  --shadow-md-dark:  0 24px 80px rgba(0, 0, 0, 0.7);
+  --shadow-glow-primary: 0 0 15px rgba(222, 115, 86, 0.3);
+  --shadow-glow-primary-strong: 0 10px 30px rgba(222, 115, 86, 0.15);
+
+  --border-width: 1px;
+}

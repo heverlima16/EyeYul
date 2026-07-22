@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  
+  <g transform="rotate(45, 256, 256) translate(256, 256) scale(1.22) translate(-256, -256)">
+    <path d="M 235 185 C 185 140, 175 105, 200 95 C 225 85, 235 130, 245 185 Z" fill="#F97316" stroke="#7c390b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M 277 185 C 327 140, 337 105, 312 95 C 287 85, 277 130, 267 185 Z" fill="#F97316" stroke="#7c390b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M 256 185 C 235 120, 235 80, 256 80 C 277 80, 277 120, 256 185 Z" fill="#F97316" stroke="#7c390b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M 215 185 C 170 210, 195 280, 240 395 C 246 410, 266 410, 272 395 C 317 280, 342 210, 297 185 C 277 192, 235 192, 215 185 Z" fill="#F97316" stroke="#7c390b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M 222 250 C 235 258, 267 258, 282 250" fill="none" stroke="#7c390b" stroke-width="10" stroke-linecap="round"></path>
+    <path d="M 228 300 C 242 308, 264 308, 274 300" fill="none" stroke="#7c390b" stroke-width="10" stroke-linecap="round"></path>
+    <path d="M 235 350 C 245 356, 262 356, 269 350" fill="none" stroke="#7c390b" stroke-width="10" stroke-linecap="round"></path>
+  </g>
+</svg>
