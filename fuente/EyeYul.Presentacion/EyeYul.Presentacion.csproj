@@ -39,6 +39,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Ademas de ser el icono del ejecutable, se incrusta como recurso para que
+         la barra de tareas y la bandeja usen exactamente el mismo icono. -->
+    <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="H.NotifyIcon.Wpf" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />

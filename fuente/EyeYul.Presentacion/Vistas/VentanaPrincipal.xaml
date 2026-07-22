@@ -6,7 +6,7 @@
         xmlns:comp="clr-namespace:EyeYul.Presentacion.Componentes"
         Title="EyeYul" Width="1180" Height="770" MinWidth="1000" MinHeight="680"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Icon="{StaticResource EyeLogo}"
+        Icon="pack://application:,,,/EyeYul;component/app.ico"
         WindowStartupLocation="CenterScreen" FontFamily="{StaticResource SansFont}">
 
     <Window.Resources>

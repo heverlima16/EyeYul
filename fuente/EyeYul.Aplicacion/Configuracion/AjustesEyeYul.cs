@@ -56,6 +56,26 @@ public sealed class EnforcementSettings
 
 public sealed class AppearanceSettings
 {
+    /// <summary>
+    /// Frases que se muestran durante la pausa cuando el usuario no ha escrito las suyas.
+    /// Se rotan al azar para que la pausa no se vuelva un mensaje que se ignora de tanto verlo.
+    /// </summary>
+    public static readonly IReadOnlyList<string> FrasesPorDefecto =
+    [
+        "Mira a 6 metros de distancia y relaja la vista.",
+        "Parpadea despacio unas cuantas veces. Tus ojos lo agradecen.",
+        "Estira el cuello: oreja al hombro, sin prisa, a cada lado.",
+        "Endereza la espalda y baja los hombros.",
+        "Levantate y da unos pasos. Aunque sean pocos.",
+        "Respira hondo tres veces. Suelta el aire despacio.",
+        "Suelta el raton y abre y cierra las manos.",
+        "Bebe un poco de agua.",
+        "Mira por la ventana. Lo lejano descansa la vista.",
+        "Rota los tobillos y estira las piernas.",
+        "Cierra los ojos unos segundos. No pasa nada.",
+        "Afloja la mandibula: solemos apretarla sin darnos cuenta."
+    ];
+
     public string Theme { get; set; } = "system";
 
     public bool PlaySound { get; set; } = true;
@@ -64,7 +84,7 @@ public sealed class AppearanceSettings
 
     public string BreakMessage { get; set; } = "Mira a 6 metros de distancia y relaja la vista.";
 
-    public List<string> CustomMessages { get; set; } = new();
+    public List<string> CustomMessages { get; set; } = [.. FrasesPorDefecto];
 
     public bool ShowFloatingCountdown { get; set; } = false;
 }

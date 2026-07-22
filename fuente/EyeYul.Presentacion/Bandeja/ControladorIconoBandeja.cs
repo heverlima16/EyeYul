@@ -2,12 +2,9 @@ using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using EyeYul.Aplicacion.Abstracciones;
 using EyeYul.Aplicacion.Actividad;
 using EyeYul.Aplicacion.Descansos;
-using EyeYul.Presentacion.Interoperabilidad;
 using EyeYul.Presentacion.ModelosVista;
 using EyeYul.Presentacion.Vistas;
 using H.NotifyIcon;
@@ -39,7 +36,7 @@ public sealed class ControladorIconoBandeja(
         _tray = new TaskbarIcon
         {
             ToolTipText = "EyeYul",
-            Icon = CreateLogoIcon(64),
+            Icon = CreateLogoIcon(32),
             ContextMenu = BuildMenu(),
             Visibility = Visibility.Visible
         };
@@ -53,38 +50,17 @@ public sealed class ControladorIconoBandeja(
         ApplyFloatingPreference();
     }
 
-    /// <summary>Rasteriza el logo vectorial de la app a un <see cref="Icon"/> para la bandeja.</summary>
+    /// <summary>
+    /// Carga el icono de la app desde el recurso incrustado, para que la bandeja use
+    /// exactamente el mismo que el ejecutable y la barra de tareas.
+    /// </summary>
     private static Icon CreateLogoIcon(int size)
     {
-        var logo = (DrawingImage)Application.Current.Resources["EyeLogo"];
+        var uri = new Uri("pack://application:,,,/EyeYul;component/app.ico");
+        using Stream stream = Application.GetResourceStream(uri)!.Stream;
 
-        var visual = new DrawingVisual();
-        using (DrawingContext dc = visual.RenderOpen())
-        {
-            dc.DrawImage(logo, new Rect(0, 0, size, size));
-        }
-
-        var target = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
-        target.Render(visual);
-
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(target));
-
-        using var ms = new MemoryStream();
-        encoder.Save(ms);
-        ms.Position = 0;
-
-        using var bitmap = new Bitmap(ms);
-        nint hIcon = bitmap.GetHicon();
-        try
-        {
-            using Icon icon = Icon.FromHandle(hIcon);
-            return (Icon)icon.Clone();
-        }
-        finally
-        {
-            WindowNative.DestroyIcon(hIcon);
-        }
+        // app.ico es multi-resolucion: se pide el tamano exacto que quiere la bandeja.
+        return new Icon(stream, new System.Drawing.Size(size, size));
     }
 
     private ContextMenu BuildMenu()
