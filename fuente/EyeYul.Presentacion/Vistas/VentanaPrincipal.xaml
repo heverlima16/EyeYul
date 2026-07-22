@@ -126,6 +126,18 @@
                     <DockPanel Margin="18">
                         <!-- Apariencia (abajo) -->
                         <StackPanel DockPanel.Dock="Bottom">
+                            <!-- Unica entrada a la ventana de Ajustes desde la app;
+                                 antes solo se llegaba por el menu de la bandeja. -->
+                            <Button Style="{StaticResource NavItemButton}" Command="{Binding OpenSettingsCommand}"
+                                    Background="Transparent" Margin="0,0,0,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource Ico}" Data="{StaticResource IcoSettings}" Width="15" Height="15" Stroke="{DynamicResource SubBrush}" />
+                                    <TextBlock Text="Ajustes avanzados" Margin="10,0,0,0" FontSize="12.5" Foreground="{DynamicResource SubBrush}" />
+                                </StackPanel>
+                            </Button>
+
+                            <Border Height="1" Background="{DynamicResource CardBorderBrush}" Margin="0,4,0,0" Opacity="0.7" />
+
                             <TextBlock Text="APARIENCIA" Style="{StaticResource MonoLabel}" Margin="8,10,0,6" />
                             <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Padding="3">
                                 <UniformGrid Rows="1" Columns="3">
