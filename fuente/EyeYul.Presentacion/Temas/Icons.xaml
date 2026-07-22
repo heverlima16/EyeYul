@@ -1,0 +1,77 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib">
+    <StreamGeometry x:Key="IcoSun">M8,12A4,4,0,1,0,16,12A4,4,0,1,0,8,12 M12,2L12,4 M12,20L12,22 M4.9,4.9L6.300000000000001,6.300000000000001 M17.7,17.7L19.099999999999998,19.099999999999998 M2,12L4,12 M20,12L22,12 M4.9,19.1L6.300000000000001,17.700000000000003 M17.7,6.3L19.099999999999998,4.9</StreamGeometry>
+    <StreamGeometry x:Key="IcoSparkles">M12,3L13.8,7.9 18,9.5 13.8,11.1 12,16 10.2,11.1 6,9.5 10.2,7.9z M19,15L19.7,17 21.7,17.7 19.7,18.4 19,20.4 18.3,18.4 16.3,17.7 18.3,17z</StreamGeometry>
+    <StreamGeometry x:Key="IcoUtensils">M6,3L6,10A2,2,0,0,0,8,12A2,2,0,0,0,10,10L10,3 M8,12L8,21 M18,3C16,3,15,5,15,8L15,11 18,11 M18,11L18,21</StreamGeometry>
+    <StreamGeometry x:Key="IcoSearch">M4,11A7,7,0,1,0,18,11A7,7,0,1,0,4,11 M21,21L16.7,16.7</StreamGeometry>
+    <StreamGeometry x:Key="IcoKeyboard">M4,6L20,6A2,2,0,0,1,22,8L22,16A2,2,0,0,1,20,18L4,18A2,2,0,0,1,2,16L2,8A2,2,0,0,1,4,6z M6,10L6.01,10 M10,10L10.01,10 M14,10L14.01,10 M18,10L18.01,10 M6,14L18,14</StreamGeometry>
+    <StreamGeometry x:Key="IcoRotate">M3,12A9,9,0,1,0,12,3A9,9,0,0,0,5.3,6 M3,4L3,9 8,9</StreamGeometry>
+    <StreamGeometry x:Key="IcoMessage">M4,4L20,4 20,16 8,16 4,20z</StreamGeometry>
+    <StreamGeometry x:Key="IcoCoffee">M3,8L17,8 17,14A4,4,0,0,1,13,18L7,18A4,4,0,0,1,3,14z M17,9L19,9A2,2,0,0,1,19,13L17,13</StreamGeometry>
+    <StreamGeometry x:Key="IcoBrain">M9,3A3,3,0,0,0,6,6L6,7A3,3,0,0,0,4,12A3,3,0,0,0,6,17L6,18A3,3,0,0,0,12,18L12,6A3,3,0,0,0,9,3z M15,3A3,3,0,0,1,18,6L18,7A3,3,0,0,1,20,12A3,3,0,0,1,18,17L18,18A3,3,0,0,1,12,18L12,6A3,3,0,0,1,15,3z</StreamGeometry>
+    <StreamGeometry x:Key="IcoActivity">M22,12L18,12 15,21 9,3 6,12 2,12</StreamGeometry>
+    <Style TargetType="Path" x:Key="Ico">
+        <Style.Resources>
+            <ResourceDictionary />
+        </Style.Resources>
+        <Setter Property="Shape.StrokeThickness">
+            <Setter.Value>
+                <s:Double>2</s:Double>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Shape.Stretch">
+            <Setter.Value>
+                <x:Static Member="Stretch.Uniform" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Shape.StrokeStartLineCap">
+            <Setter.Value>
+                <x:Static Member="PenLineCap.Round" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Shape.StrokeEndLineCap">
+            <Setter.Value>
+                <x:Static Member="PenLineCap.Round" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Shape.StrokeLineJoin">
+            <Setter.Value>
+                <x:Static Member="PenLineJoin.Round" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="FrameworkElement.Width">
+            <Setter.Value>
+                <s:Double>16</s:Double>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="FrameworkElement.Height">
+            <Setter.Value>
+                <s:Double>16</s:Double>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <StreamGeometry x:Key="IcoZap">M13,2L3,14 11,14 11,22 21,10 13,10z</StreamGeometry>
+    <StreamGeometry x:Key="IcoVolumeX">M11,5L6,9 2,9 2,15 6,15 11,19z M23,9L17,15 M17,9L23,15</StreamGeometry>
+    <StreamGeometry x:Key="IcoFlame">M12,2C13,6,9,7,9,11A5,5,0,0,0,19,11C19,9 18,8 17,7 17,9 16,10 15,9 16,6 14,4 12,2z</StreamGeometry>
+    <StreamGeometry x:Key="IcoGamepad">M6,7L18,7A5,5,0,0,1,18,17L6,17A5,5,0,0,1,6,7z M8,10L8,14 M6,12L10,12 M15,11L15.01,11 M18,13L18.01,13</StreamGeometry>
+    <StreamGeometry x:Key="IcoShieldCheck">M12,3L19,6 19,12C19,16.5 16,19.5 12,21 8,19.5 5,16.5 5,12L5,6z M9,12L11,14 15,10</StreamGeometry>
+    <StreamGeometry x:Key="IcoCalendar">M5,5L19,5A2,2,0,0,1,21,7L21,19A2,2,0,0,1,19,21L5,21A2,2,0,0,1,3,19L3,7A2,2,0,0,1,5,5z M16,3L16,7 M8,3L8,7 M3,10L21,10</StreamGeometry>
+    <StreamGeometry x:Key="IcoPlus">M12,5L12,19 M5,12L19,12</StreamGeometry>
+    <StreamGeometry x:Key="IcoHeart">M20.8,4.6A5.5,5.5,0,0,0,13,4.6L12,5.6 11,4.6A5.5,5.5,0,1,0,3.2,12.399999999999999L4.2,13.399999999999999 12,21 19.8,13.4 20.8,12.4A5.5,5.5,0,0,0,20.8,4.6000000000000005z</StreamGeometry>
+    <StreamGeometry x:Key="IcoMoon">M20,14.5A8,8,0,0,1,9.5,4A8,8,0,1,0,20,14.5z</StreamGeometry>
+    <StreamGeometry x:Key="IcoShare">M15,5A3,3,0,1,0,21,5A3,3,0,1,0,15,5 M3,12A3,3,0,1,0,9,12A3,3,0,1,0,3,12 M15,19A3,3,0,1,0,21,19A3,3,0,1,0,15,19 M8.6,10.6L15.399999999999999,6.8 M8.6,13.4L15.399999999999999,17.2</StreamGeometry>
+    <StreamGeometry x:Key="IcoBell">M6,8A6,6,0,1,1,18,8C18,13,20,14,20,14L4,14C4,14,6,13,6,8 M10.3,21A2,2,0,0,0,13.700000000000001,21</StreamGeometry>
+    <StreamGeometry x:Key="IcoEye">M2,12C2,12 5.5,5 12,5 18.5,5 22,12 22,12 22,12 18.5,19 12,19 5.5,19 2,12 2,12z M9,12A3,3,0,1,0,15,12A3,3,0,1,0,9,12</StreamGeometry>
+    <StreamGeometry x:Key="IcoTrash">M3,6L21,6 M8,6L8,4 16,4 16,6 M6,6L7,20 17,20 18,6</StreamGeometry>
+    <StreamGeometry x:Key="IcoShield">M12,3L19,6 19,12C19,16.5 16,19.5 12,21 8,19.5 5,16.5 5,12L5,6z</StreamGeometry>
+    <StreamGeometry x:Key="IcoChevronsUp">M7,11L12,6 17,11 M7,18L12,13 17,18</StreamGeometry>
+    <StreamGeometry x:Key="IcoPause">M6,4L10,4 10,20 6,20z M14,4L18,4 18,20 14,20z</StreamGeometry>
+    <StreamGeometry x:Key="IcoAward">M6,8A6,6,0,1,0,18,8A6,6,0,1,0,6,8 M8.2,13.5L7,22 12,19 17,22 15.8,13.5</StreamGeometry>
+    <StreamGeometry x:Key="IcoUserCheck">M5,8A4,4,0,1,0,13,8A4,4,0,1,0,5,8 M2,21C2,17,5,15,9,15 M16,11L18,13 22,9</StreamGeometry>
+    <StreamGeometry x:Key="IcoInfo">M3,12A9,9,0,1,0,21,12A9,9,0,1,0,3,12 M12,16L12,12 M12,8L12.01,8</StreamGeometry>
+    <StreamGeometry x:Key="IcoClock">M3,12A9,9,0,1,0,21,12A9,9,0,1,0,3,12 M12,7L12,12 15,14</StreamGeometry>
+    <StreamGeometry x:Key="IcoTv">M5,6L19,6A2,2,0,0,1,21,8L21,17A2,2,0,0,1,19,19L5,19A2,2,0,0,1,3,17L3,8A2,2,0,0,1,5,6z M8,21L16,21 M12,19L12,21</StreamGeometry>
+    <StreamGeometry x:Key="IcoPlay">M6,3L20,12 6,21z</StreamGeometry>
+    <StreamGeometry x:Key="IcoVideo">M4,6L14,6A2,2,0,0,1,16,8L16,16A2,2,0,0,1,14,18L4,18A2,2,0,0,1,2,16L2,8A2,2,0,0,1,4,6z M22,8L16,12 22,16z</StreamGeometry>
+    <StreamGeometry x:Key="IcoShieldAlert">M12,3L19,6 19,12C19,16.5 16,19.5 12,21 8,19.5 5,16.5 5,12L5,6z M12,8L12,12 M12,16L12.01,16</StreamGeometry>
+    <StreamGeometry x:Key="IcoHourglass">M5,3L19,3 M5,21L19,21 M6,3C6,9 11,10 12,12 11,14 6,15 6,21 M18,3C18,9 13,10 12,12 13,14 18,15 18,21</StreamGeometry>
+</ResourceDictionary>

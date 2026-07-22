@@ -1,0 +1,58 @@
+<Window x:Class="EyeYul.Presentacion.Vistas.VentanaAjustes"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EyeYul — Ajustes" Width="460" Height="640"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource CreamBrush}"
+        FontFamily="Segoe UI" ResizeMode="CanMinimize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,16">
+            <Image Source="{StaticResource EyeLogo}" Width="40" Height="40" />
+            <TextBlock Text="Ajustes" FontSize="24" FontWeight="SemiBold"
+                       Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" Margin="12,0,0,0" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="PAUSAS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
+
+                <TextBlock Text="Intervalo entre pausas (minutos)" Foreground="{DynamicResource InkBrush}" />
+                <Slider Minimum="1" Maximum="120" Value="{Binding IntervalMinutes}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,4,0,2" />
+                <TextBlock Text="{Binding IntervalMinutes, StringFormat={}{0:0} min}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12" />
+
+                <TextBlock Text="Duración de la pausa (segundos)" Foreground="{DynamicResource InkBrush}" />
+                <Slider Minimum="5" Maximum="600" Value="{Binding DurationSeconds}" TickFrequency="5" IsSnapToTickEnabled="True" Margin="0,4,0,2" />
+                <TextBlock Text="{Binding DurationSeconds, StringFormat={}{0:0} s}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12" />
+
+                <TextBlock Text="Mensaje de la pausa" Foreground="{DynamicResource InkBrush}" />
+                <TextBox Text="{Binding BreakMessage}" Margin="0,4,0,16" Padding="8" TextWrapping="Wrap" MinHeight="48" />
+
+                <TextBlock Text="PAUSA INTELIGENTE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
+                <CheckBox Content="Respetar el flujo (pausa inteligente)" IsChecked="{Binding SmartPauseEnabled}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
+                <CheckBox Content="No interrumpir en pantalla completa" IsChecked="{Binding RespectFullscreen}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
+                <CheckBox Content="No interrumpir en reuniones (mic/cámara)" IsChecked="{Binding RespectMeetings}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
+                <CheckBox Content="No interrumpir al reproducir video" IsChecked="{Binding RespectMedia}" Margin="0,4,0,12" Foreground="{DynamicResource InkBrush}" />
+
+                <TextBlock Text="Máx. aplazamientos por día" Foreground="{DynamicResource InkBrush}" />
+                <Slider Minimum="0" Maximum="30" Value="{Binding MaxSnoozesPerDay}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,4,0,2" />
+                <TextBlock Text="{Binding MaxSnoozesPerDay, StringFormat={}{0} máx. · 0 sin límite}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12" />
+
+                <TextBlock Text="GENERAL" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
+                <CheckBox Content="Iniciar con Windows" IsChecked="{Binding StartWithWindows}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
+                <CheckBox Content="Reproducir sonido en la pausa" IsChecked="{Binding PlaySound}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
+                <CheckBox Content="Mostrar countdown flotante" IsChecked="{Binding ShowFloatingCountdown}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" />
+            <Button Content="Guardar" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>
+

@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- System.Windows.Forms.Screen se usa para enumerar monitores en el overlay. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- El ensamblado se llama EyeYul: los pack:// URIs del XAML dependen de este nombre. -->
+    <AssemblyName>EyeYul</AssemblyName>
+    <RootNamespace>EyeYul.Presentacion</RootNamespace>
+
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <DebugType>portable</DebugType>
+    <EmbedAllSources>true</EmbedAllSources>
+
+    <!-- WFO0003: el analizador de WinForms pide mover el DPI del manifiesto a
+         Application.SetHighDpiMode. Esto es una app WPF (WinForms solo aporta Screen),
+         y el PerMonitorV2 del manifiesto es lo que hace correcto el overlay
+         multi-monitor con escalado mixto. Se mantiene a proposito. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- UseWindowsForms inyecta un global using de System.Windows.Forms que choca con
+         WPF (Application, UserControl, ContextMenu, MenuItem...). Se quita el using
+         global; la referencia al ensamblado se mantiene para System.Windows.Forms.Screen. -->
+    <Using Remove="System.Windows.Forms" />
+    <!-- Igual con System.Drawing: choca con System.Windows.Media (Brush, Color...).
+         Los pocos archivos que necesitan Icon/Bitmap/Rectangle lo importan a mano. -->
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EyeYul.Dominio\EyeYul.Dominio.csproj" />
+    <ProjectReference Include="..\EyeYul.Aplicacion\EyeYul.Aplicacion.csproj" />
+    <ProjectReference Include="..\EyeYul.Infraestructura\EyeYul.Infraestructura.csproj" />
+  </ItemGroup>
+
+</Project>
