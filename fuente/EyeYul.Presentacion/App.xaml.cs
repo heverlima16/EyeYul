@@ -54,7 +54,17 @@ public partial class App : Application
 
         ControladorIconoBandeja trayController = Services.GetRequiredService<ControladorIconoBandeja>();
         trayController.Initialize();
-        trayController.ShowMainWindow();
+
+        // El auto-inicio del registro lanza la app con --minimized: en ese caso solo
+        // se queda en la bandeja. Al abrirla a mano si se muestra la ventana, que es
+        // lo que espera quien hace doble clic en el ejecutable.
+        bool arrancarEnBandeja = e.Args.Any(
+            a => string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase));
+
+        if (!arrancarEnBandeja)
+        {
+            trayController.ShowMainWindow();
+        }
     }
 
     private static void ApplyStartupPreference(IAlmacenAjustes store)
