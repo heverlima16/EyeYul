@@ -18,8 +18,8 @@ public static class DependencyInjection
         services.AddSingleton<BaseDatosSqlite>();
         services.AddSingleton<IBreakRepository, RepositorioDescanso>();
         services.AddSingleton<ISessionRepository, RepositorioSesion>();
-        services.AddSingleton<IAppUsageRepository, AppUsageRepository>();
-        services.AddSingleton<IWebsiteUsageRepository, WebsiteUsageRepository>();
+        services.AddSingleton<IAppUsageRepository, RepositorioUsoApp>();
+        services.AddSingleton<IWebsiteUsageRepository, RepositorioUsoSitioWeb>();
         services.AddSingleton<IScreenScoreRepository, RepositorioPuntajeVisual>();
         services.AddSingleton<IPlannedBreakRepository, RepositorioDescansoProgramado>();
 

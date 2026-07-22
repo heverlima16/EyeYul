@@ -4,22 +4,22 @@ public sealed class Sesion
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
-    public DateTimeOffset StartedAt { get; init; }
+    public DateTimeOffset IniciadaEn { get; init; }
 
-    public DateTimeOffset? EndedAt { get; set; }
+    public DateTimeOffset? FinalizadaEn { get; set; }
 
-    public TimeSpan ActiveTime { get; set; }
+    public TimeSpan TiempoActivo { get; set; }
 
-    public int BreaksTaken { get; set; }
+    public int DescansosTomados { get; set; }
 
-    public int BreaksSkipped { get; set; }
+    public int DescansosOmitidos { get; set; }
 
-    public bool IsOpen => !EndedAt.HasValue;
+    public bool EstaAbierta => !FinalizadaEn.HasValue;
 
-    public TimeSpan Duration => (EndedAt ?? DateTimeOffset.Now) - StartedAt;
+    public TimeSpan Duracion => (FinalizadaEn ?? DateTimeOffset.Now) - IniciadaEn;
 
-    public void Close(DateTimeOffset when)
+    public void Cerrar(DateTimeOffset cuando)
     {
-        EndedAt = when;
+        FinalizadaEn = cuando;
     }
 }

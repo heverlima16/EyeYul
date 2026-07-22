@@ -11,61 +11,61 @@ using Microsoft.Extensions.Logging;
 namespace EyeYul.Aplicacion.Descansos;
 
 public sealed class ProgramadorDescansos(
-    IMonitorActividad activityMonitor,
-    MotorPausaInteligente smartPause,
-    IControladorPantallaDescanso overlay,
-    IServicioNotificacion notifications,
-    ServicioPuntajeVisual screenScore,
-    IBreakRepository breakRepository,
-    IAlmacenAjustes settingsStore,
-    PoliticaPausa snoozePolicy,
-    ServicioDescansoProgramado plannedBreaks,
-    IAutomationRunner automation,
-    IReloj clock,
-    ILogger<ProgramadorDescansos> logger) : BackgroundService
+    IMonitorActividad monitorActividad,
+    MotorPausaInteligente pausaInteligente,
+    IControladorPantallaDescanso pantallaDescanso,
+    IServicioNotificacion notificaciones,
+    ServicioPuntajeVisual puntajeVisual,
+    IBreakRepository repositorioDescansos,
+    IAlmacenAjustes almacenAjustes,
+    PoliticaPausa politicaAplazamiento,
+    ServicioDescansoProgramado descansosProgramados,
+    IAutomationRunner automatizacion,
+    IReloj reloj,
+    ILogger<ProgramadorDescansos> registro) : BackgroundService
 {
-    private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan Intervalo = TimeSpan.FromSeconds(1);
 
-    private TimeSpan _accumulated;
+    private TimeSpan _acumulado;
 
-    private TimeSpan _currentStretch;
+    private TimeSpan _rachaActual;
 
-    private DateTimeOffset _lastTick;
+    private DateTimeOffset _ultimoTic;
 
-    private volatile bool _forceBreak;
+    private volatile bool _forzarPausa;
 
-    public TimeSpan TimeUntilNextBreak { get; private set; }
+    public TimeSpan TiempoHastaProximaPausa { get; private set; }
 
-    public bool IsPaused { get; private set; }
+    public bool EstaEnPausa { get; private set; }
 
     /// <summary>
     /// Motivo por el que se suprimio la ultima pausa, o <c>null</c> si la ultima si se mostro.
     /// Permite explicar al usuario por que el temporizador llego a cero sin pausa.
     /// </summary>
-    public PauseDecision? UltimaSupresion { get; private set; }
+    public DecisionPausa? UltimaSupresion { get; private set; }
 
-    public event EventHandler<TimeSpan>? Ticked;
+    public event EventHandler<TimeSpan>? Tic;
 
     /// <summary>Se dispara cuando una pausa no se muestra por una regla de Smart Pause.</summary>
-    public event EventHandler<PauseDecision>? PausaSuprimida;
+    public event EventHandler<DecisionPausa>? PausaSuprimida;
 
-    public void RequestImmediateBreak() => _forceBreak = true;
+    public void SolicitarPausaInmediata() => _forzarPausa = true;
 
-    public void TogglePause() => IsPaused = !IsPaused;
+    public void AlternarPausa() => EstaEnPausa = !EstaEnPausa;
 
-    public void ResetCountdown() => _accumulated = TimeSpan.Zero;
+    public void ReiniciarCuentaRegresiva() => _acumulado = TimeSpan.Zero;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken tokenDetencion)
     {
-        _lastTick = clock.Now;
-        logger.LogInformation("ProgramadorDescansos iniciado.");
+        _ultimoTic = reloj.Now;
+        registro.LogInformation("ProgramadorDescansos iniciado.");
 
-        using var timer = new PeriodicTimer(Tick);
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        using var temporizador = new PeriodicTimer(Intervalo);
+        while (await temporizador.WaitForNextTickAsync(tokenDetencion))
         {
             try
             {
-                await TickAsync(stoppingToken);
+                await TicAsync(tokenDetencion);
             }
             catch (OperationCanceledException)
             {
@@ -73,108 +73,108 @@ public sealed class ProgramadorDescansos(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error en el tick del ProgramadorDescansos.");
+                registro.LogError(ex, "Error en el tick del ProgramadorDescansos.");
             }
         }
     }
 
-    private async Task TickAsync(CancellationToken ct)
+    private async Task TicAsync(CancellationToken ct)
     {
-        AjustesEyeYul settings = settingsStore.Current;
-        DateTimeOffset now = clock.Now;
-        TimeSpan elapsed = now - _lastTick;
-        _lastTick = now;
+        AjustesEyeYul ajustes = almacenAjustes.Current;
+        DateTimeOffset ahora = reloj.Now;
+        TimeSpan transcurrido = ahora - _ultimoTic;
+        _ultimoTic = ahora;
 
-        AcumularTiempoActivo(elapsed, settings);
+        AcumularTiempoActivo(transcurrido, ajustes);
 
-        TimeSpan interval = settings.Descansos.Interval;
-        TimeUntilNextBreak = interval > _accumulated ? interval - _accumulated : TimeSpan.Zero;
-        Ticked?.Invoke(this, TimeUntilNextBreak);
+        TimeSpan intervalo = ajustes.Descansos.Interval;
+        TiempoHastaProximaPausa = intervalo > _acumulado ? intervalo - _acumulado : TimeSpan.Zero;
+        Tic?.Invoke(this, TiempoHastaProximaPausa);
 
-        if (IsPaused && !_forceBreak)
+        if (EstaEnPausa && !_forzarPausa)
         {
             return;
         }
 
-        DescansoProgramado? planned = await plannedBreaks.GetDueAsync(TimeSpan.FromSeconds(30), ct);
-        bool intervalDue = _accumulated >= interval;
+        DescansoProgramado? programado = await descansosProgramados.ObtenerPendienteAsync(TimeSpan.FromSeconds(30), ct);
+        bool tocaPorIntervalo = _acumulado >= intervalo;
 
-        if (_forceBreak || planned is not null || intervalDue)
+        if (_forzarPausa || programado is not null || tocaPorIntervalo)
         {
-            TipoDescanso type = planned is not null ? TipoDescanso.Planned : TipoDescanso.Interval;
-            TimeSpan duration = planned?.Duration ?? settings.Descansos.Duration;
-            await TriggerBreakAsync(type, duration, settings, ct);
+            TipoDescanso tipo = programado is not null ? TipoDescanso.Planificado : TipoDescanso.Intervalo;
+            TimeSpan duracion = programado?.Duracion ?? ajustes.Descansos.Duration;
+            await DispararPausaAsync(tipo, duracion, ajustes, ct);
         }
     }
 
-    private void AcumularTiempoActivo(TimeSpan elapsed, AjustesEyeYul settings)
+    private void AcumularTiempoActivo(TimeSpan transcurrido, AjustesEyeYul ajustes)
     {
-        ActivitySnapshot current = activityMonitor.Current;
-        bool locked = current.State.HasFlag(EstadoActividad.SessionLocked);
-        bool idle = current.State.HasFlag(EstadoActividad.Idle)
-                    && current.IdleTime >= settings.SmartPause.IdleThreshold;
+        ActivitySnapshot actual = monitorActividad.Current;
+        bool bloqueada = actual.State.HasFlag(EstadoActividad.SesionBloqueada);
+        bool ausente = actual.State.HasFlag(EstadoActividad.Inactivo)
+                       && actual.IdleTime >= ajustes.SmartPause.IdleThreshold;
 
-        if (IsPaused || locked || idle)
+        if (EstaEnPausa || bloqueada || ausente)
         {
             return;
         }
 
-        _accumulated += elapsed;
-        _currentStretch += elapsed;
+        _acumulado += transcurrido;
+        _rachaActual += transcurrido;
     }
 
-    private async Task TriggerBreakAsync(
-        TipoDescanso type, TimeSpan duration, AjustesEyeYul settings, CancellationToken ct)
+    private async Task DispararPausaAsync(
+        TipoDescanso tipo, TimeSpan duracion, AjustesEyeYul ajustes, CancellationToken ct)
     {
-        bool forced = _forceBreak;
-        _forceBreak = false;
+        bool forzada = _forzarPausa;
+        _forzarPausa = false;
 
         // Una pausa forzada por el usuario nunca se suprime por "flujo".
-        if (!forced && await FueSuprimidaPorFlujoAsync(type, duration, settings, ct))
+        if (!forzada && await FueSuprimidaPorFlujoAsync(tipo, duracion, ajustes, ct))
         {
             return;
         }
 
-        Descanso record = NewBreak(type, duration);
-        await breakRepository.AddAsync(record, ct);
+        Descanso registroDescanso = NuevoDescanso(tipo, duracion);
+        await repositorioDescansos.AddAsync(registroDescanso, ct);
 
-        bool avisoPrevio = settings.Descansos.PreBreakWarning > TimeSpan.Zero && !forced;
-        if (avisoPrevio && await ResolverAvisoPrevioAsync(record, settings, ct))
+        bool avisoPrevio = ajustes.Descansos.PreBreakWarning > TimeSpan.Zero && !forzada;
+        if (avisoPrevio && await ResolverAvisoPrevioAsync(registroDescanso, ajustes, ct))
         {
             return;
         }
 
-        await EjecutarPausaAsync(record, duration, settings, ct);
+        await EjecutarPausaAsync(registroDescanso, duracion, ajustes, ct);
     }
 
     private async Task<bool> FueSuprimidaPorFlujoAsync(
-        TipoDescanso type, TimeSpan duration, AjustesEyeYul settings, CancellationToken ct)
+        TipoDescanso tipo, TimeSpan duracion, AjustesEyeYul ajustes, CancellationToken ct)
     {
-        ActivitySnapshot snapshot = activityMonitor.Current;
-        PauseDecision decision = smartPause.Evaluate(snapshot, settings.SmartPause);
+        ActivitySnapshot muestra = monitorActividad.Current;
+        DecisionPausa decision = pausaInteligente.Evaluar(muestra, ajustes.SmartPause);
 
-        if (decision == PauseDecision.Allow)
+        if (decision == DecisionPausa.Permitir)
         {
             return false;
         }
 
-        logger.LogInformation("Pausa {Type} suprimida: {Reason}", type, decision);
+        registro.LogInformation("Pausa {Tipo} suprimida: {Motivo}", tipo, decision);
 
         // Estar inactivo no gasta la pausa: se reintenta al volver.
-        if (decision != PauseDecision.DeferIdle)
+        if (decision != DecisionPausa.AplazarPorAusencia)
         {
-            Descanso registroSuprimido = NewBreak(type, duration);
-            registroSuprimido.MarkSuppressed();
-            await breakRepository.AddAsync(registroSuprimido, ct);
+            Descanso registroSuprimido = NuevoDescanso(tipo, duracion);
+            registroSuprimido.MarcarSuprimido();
+            await repositorioDescansos.AddAsync(registroSuprimido, ct);
 
             UltimaSupresion = decision;
 
             // Reintentar dentro de ~2 min. Se recorta contra el intervalo para que
-            // un intervalo corto no deje _accumulated en negativo (lo que retrasaria
+            // un intervalo corto no deje _acumulado en negativo (lo que retrasaria
             // el reintento muchisimo mas de lo previsto).
             TimeSpan reintento = TimeSpan.FromMinutes(2);
-            _accumulated = settings.Descansos.Interval > reintento
-                ? settings.Descansos.Interval - reintento
+            _acumulado = ajustes.Descansos.Interval > reintento
+                ? ajustes.Descansos.Interval - reintento
                 : TimeSpan.Zero;
 
             PausaSuprimida?.Invoke(this, decision);
@@ -184,27 +184,27 @@ public sealed class ProgramadorDescansos(
     }
 
     private async Task<bool> ResolverAvisoPrevioAsync(
-        Descanso record, AjustesEyeYul settings, CancellationToken ct)
+        Descanso descanso, AjustesEyeYul ajustes, CancellationToken ct)
     {
-        NotificationResponse respuesta = await notifications.ShowBreakDueAsync(
+        NotificationResponse respuesta = await notificaciones.ShowBreakDueAsync(
             "EyeYul",
-            $"Pausa en {(int)settings.Descansos.PreBreakWarning.TotalSeconds} s",
+            $"Pausa en {(int)ajustes.Descansos.PreBreakWarning.TotalSeconds} s",
             ct);
 
-        if (respuesta is NotificationResponse.Skip && settings.Descansos.AllowSkip)
+        if (respuesta is NotificationResponse.Skip && ajustes.Descansos.AllowSkip)
         {
-            await SkipAsync(record, ct);
+            await OmitirAsync(descanso, ct);
             return true;
         }
 
-        if (respuesta is NotificationResponse.Snooze snooze
-            && snoozePolicy.CanSnooze(clock.Today, record.SnoozeCount, settings.AplicacionReglas))
+        if (respuesta is NotificationResponse.Snooze aplazamiento
+            && politicaAplazamiento.PuedeAplazar(reloj.Today, descanso.ConteoAplazamientos, ajustes.AplicacionReglas))
         {
-            record.MarkSnoozed();
-            snoozePolicy.RecordSnooze(clock.Today);
-            await breakRepository.AddAsync(record, ct);
-            _accumulated = settings.Descansos.Interval - snooze.Duration.Value;
-            logger.LogInformation("Pausa pospuesta {Snooze}", snooze.Duration);
+            descanso.MarcarAplazado();
+            politicaAplazamiento.RegistrarAplazamiento(reloj.Today);
+            await repositorioDescansos.AddAsync(descanso, ct);
+            _acumulado = ajustes.Descansos.Interval - aplazamiento.Duration.Valor;
+            registro.LogInformation("Pausa pospuesta {Aplazamiento}", aplazamiento.Duration);
             return true;
         }
 
@@ -212,63 +212,63 @@ public sealed class ProgramadorDescansos(
     }
 
     private async Task EjecutarPausaAsync(
-        Descanso record, TimeSpan duration, AjustesEyeYul settings, CancellationToken ct)
+        Descanso descanso, TimeSpan duracion, AjustesEyeYul ajustes, CancellationToken ct)
     {
-        await automation.RunAsync(settings.General.OnBreakStartCommand, ct);
-        record.MarkStarted(clock.Now);
+        await automatizacion.RunAsync(ajustes.General.OnBreakStartCommand, ct);
+        descanso.MarcarIniciado(reloj.Now);
         UltimaSupresion = null;
 
-        var request = new BreakOverlayRequest(
-            record,
-            ElegirMensajeDePausa(settings),
-            duration,
-            settings.Descansos.AllowSkip && !settings.AplicacionReglas.StrictMode,
-            settings.Appearance.OverlayBackgroundPath);
+        var solicitud = new BreakOverlayRequest(
+            descanso,
+            ElegirMensajeDePausa(ajustes),
+            duracion,
+            ajustes.Descansos.AllowSkip && !ajustes.AplicacionReglas.StrictMode,
+            ajustes.Appearance.OverlayBackgroundPath);
 
-        switch (await overlay.ShowAsync(request, ct))
+        switch (await pantallaDescanso.ShowAsync(solicitud, ct))
         {
             case BreakOverlayResult.Completed:
-                record.MarkCompleted(clock.Now);
-                await screenScore.RegisterBreakTakenAsync(ct);
-                _currentStretch = TimeSpan.Zero;
+                descanso.MarcarCompletado(reloj.Now);
+                await puntajeVisual.RegistrarDescansoTomadoAsync(ct);
+                _rachaActual = TimeSpan.Zero;
                 break;
 
             case BreakOverlayResult.Skipped:
-                await SkipAsync(record, ct);
+                await OmitirAsync(descanso, ct);
                 break;
 
             case BreakOverlayResult.Snoozed:
-                record.MarkSnoozed();
-                snoozePolicy.RecordSnooze(clock.Today);
+                descanso.MarcarAplazado();
+                politicaAplazamiento.RegistrarAplazamiento(reloj.Today);
                 break;
         }
 
-        await breakRepository.AddAsync(record, ct);
-        await automation.RunAsync(settings.General.OnBreakEndCommand, ct);
-        await screenScore.UpdateStretchAsync(_currentStretch, ct);
-        _accumulated = TimeSpan.Zero;
+        await repositorioDescansos.AddAsync(descanso, ct);
+        await automatizacion.RunAsync(ajustes.General.OnBreakEndCommand, ct);
+        await puntajeVisual.ActualizarRachaAsync(_rachaActual, ct);
+        _acumulado = TimeSpan.Zero;
     }
 
-    private static string ElegirMensajeDePausa(AjustesEyeYul settings)
+    private static string ElegirMensajeDePausa(AjustesEyeYul ajustes)
     {
-        List<string> customMessages = settings.Appearance.CustomMessages;
-        return customMessages.Count == 0
-            ? settings.Appearance.BreakMessage
-            : customMessages[Random.Shared.Next(customMessages.Count)];
+        List<string> mensajes = ajustes.Appearance.CustomMessages;
+        return mensajes.Count == 0
+            ? ajustes.Appearance.BreakMessage
+            : mensajes[Random.Shared.Next(mensajes.Count)];
     }
 
-    private async Task SkipAsync(Descanso record, CancellationToken ct)
+    private async Task OmitirAsync(Descanso descanso, CancellationToken ct)
     {
-        record.MarkSkipped(clock.Now);
-        await breakRepository.AddAsync(record, ct);
-        await screenScore.RegisterBreakSkippedAsync(ct);
-        _accumulated = TimeSpan.Zero;
+        descanso.MarcarOmitido(reloj.Now);
+        await repositorioDescansos.AddAsync(descanso, ct);
+        await puntajeVisual.RegistrarDescansoOmitidoAsync(ct);
+        _acumulado = TimeSpan.Zero;
     }
 
-    private Descanso NewBreak(TipoDescanso type, TimeSpan duration) => new()
+    private Descanso NuevoDescanso(TipoDescanso tipo, TimeSpan duracion) => new()
     {
-        Type = type,
-        ScheduledAt = clock.Now,
-        PlannedDuration = duration
+        Tipo = tipo,
+        ProgramadoEn = reloj.Now,
+        DuracionPlanificada = duracion
     };
 }

@@ -44,7 +44,7 @@ public sealed class ControladorIconoBandeja(
         _tray.ForceCreate(enablesEfficiencyMode: false);
         _tray.TrayLeftMouseUp += (_, _) => ShowMainWindow();
 
-        scheduler.Ticked += OnTick;
+        scheduler.Tic += OnTick;
         scheduler.PausaSuprimida += OnPausaSuprimida;
         settingsStore.Changed += (_, _) => ApplyFloatingPreference();
         ApplyFloatingPreference();
@@ -67,7 +67,7 @@ public sealed class ControladorIconoBandeja(
     {
         var menu = new ContextMenu();
         menu.Items.Add(MenuItem("Vista General", ShowMainWindow));
-        menu.Items.Add(MenuItem("Tomar pausa ahora", () => scheduler.RequestImmediateBreak()));
+        menu.Items.Add(MenuItem("Tomar pausa ahora", () => scheduler.SolicitarPausaInmediata()));
         menu.Items.Add(MenuItem("Estadísticas…", ShowStats));
         menu.Items.Add(MenuItem("Ajustes…", ShowSettings));
         menu.Items.Add(new Separator());
@@ -112,7 +112,7 @@ public sealed class ControladorIconoBandeja(
     /// Avisa de que la pausa no se mostro y por que. Sin esto el temporizador
     /// parece reiniciarse solo y no hay forma de saber que la bloqueo.
     /// </summary>
-    private void OnPausaSuprimida(object? sender, PauseDecision decision)
+    private void OnPausaSuprimida(object? sender, DecisionPausa decision)
     {
         Application.Current?.Dispatcher.BeginInvoke(() =>
         {

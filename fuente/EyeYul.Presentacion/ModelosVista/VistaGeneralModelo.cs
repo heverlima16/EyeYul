@@ -175,7 +175,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         TemaAplicador.Aplicar(ThemeMode);
         UpdateHeader();
 
-        _scheduler.Ticked += OnTick;
+        _scheduler.Tic += OnTick;
 
         _ = RefreshStatsAsync();
         _ = RefreshPlannedBreaksAsync();
@@ -202,7 +202,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
                 ? Math.Clamp(remaining.TotalSeconds / interval.TotalSeconds * 100.0, 0.0, 100.0)
                 : 0.0;
 
-            IsPaused = _scheduler.IsPaused;
+            IsPaused = _scheduler.EstaEnPausa;
             PauseButtonText = IsPaused ? "Continuar" : "Pausar";
             StatusText = EstadoActual();
         });
@@ -264,17 +264,17 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     [RelayCommand]
     private void TogglePause()
     {
-        _scheduler.TogglePause();
-        IsPaused = _scheduler.IsPaused;
+        _scheduler.AlternarPausa();
+        IsPaused = _scheduler.EstaEnPausa;
         PauseButtonText = IsPaused ? "Continuar" : "Pausar";
         StatusText = IsPaused ? "PAUSADO" : "TRABAJANDO";
     }
 
     [RelayCommand]
-    private void Reset() => _scheduler.ResetCountdown();
+    private void Reset() => _scheduler.ReiniciarCuentaRegresiva();
 
     [RelayCommand]
-    private void StartBreak() => _scheduler.RequestImmediateBreak();
+    private void StartBreak() => _scheduler.SolicitarPausaInmediata();
 
     [RelayCommand]
     private void SetMode(string mode)
@@ -354,10 +354,10 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
 
     public async Task RefreshPlannedBreaksAsync()
     {
-        IReadOnlyList<DescansoProgramado> all = await _plannedBreaks.GetAllAsync();
+        IReadOnlyList<DescansoProgramado> all = await _plannedBreaks.ObtenerTodosAsync();
 
         PlannedBreaks.Clear();
-        foreach (DescansoProgramado pb in all.OrderBy(p => p.TimeOfDay))
+        foreach (DescansoProgramado pb in all.OrderBy(p => p.HoraDelDia))
         {
             PlannedBreaks.Add(ToItem(pb));
         }
@@ -366,11 +366,11 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     private static PlannedBreakItem ToItem(DescansoProgramado pb) => new()
     {
         Id = pb.Id,
-        Name = pb.Name,
-        TimeText = pb.TimeOfDay.ToString("HH:mm"),
-        DurationText = $"Duración: {(int)pb.Duration.TotalMinutes} mins",
-        DaysText = FormatearDias(pb.Days),
-        IconKey = ElegirIconoSegunNombre(pb.Name)
+        Name = pb.Nombre,
+        TimeText = pb.HoraDelDia.ToString("HH:mm"),
+        DurationText = $"Duración: {(int)pb.Duracion.TotalMinutes} mins",
+        DaysText = FormatearDias(pb.Dias),
+        IconKey = ElegirIconoSegunNombre(pb.Nombre)
     };
 
     private static string FormatearDias(IReadOnlySet<DayOfWeek> diasActivos)
@@ -421,9 +421,9 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
 
         var pb = new DescansoProgramado
         {
-            Name = NewBreakName.Trim(),
-            TimeOfDay = hora,
-            Duration = TimeSpan.FromMinutes(Math.Max(1, NewBreakDurationMinutes))
+            Nombre = NewBreakName.Trim(),
+            HoraDelDia = hora,
+            Duracion = TimeSpan.FromMinutes(Math.Max(1, NewBreakDurationMinutes))
         };
 
         (DayOfWeek Dia, bool Activo)[] seleccion =
@@ -441,11 +441,11 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         {
             if (activo)
             {
-                pb.Days.Add(dia);
+                pb.Dias.Add(dia);
             }
         }
 
-        await _plannedBreaks.SaveAsync(pb);
+        await _plannedBreaks.GuardarAsync(pb);
         NewBreakName = "";
         await RefreshPlannedBreaksAsync();
     }
@@ -453,7 +453,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RemovePlannedBreak(Guid id)
     {
-        await _plannedBreaks.DeleteAsync(id);
+        await _plannedBreaks.EliminarAsync(id);
         await RefreshPlannedBreaksAsync();
     }
 
@@ -498,26 +498,26 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         SimContext = SimContext == id ? "" : id;
 
         bool debePausar = !string.IsNullOrEmpty(SimContext);
-        if (debePausar != _scheduler.IsPaused)
+        if (debePausar != _scheduler.EstaEnPausa)
         {
-            _scheduler.TogglePause();
+            _scheduler.AlternarPausa();
         }
 
-        IsPaused = _scheduler.IsPaused;
+        IsPaused = _scheduler.EstaEnPausa;
         PauseButtonText = IsPaused ? "Continuar" : "Pausar";
         StatusText = EstadoActual();
     }
 
     public async Task RefreshStatsAsync()
     {
-        DailyStatsSummary summary = await _stats.GetDailySummaryAsync(_clock.Today);
-        ScreenScore = summary.Score;
-        CompletedText = summary.BreaksTaken.ToString();
+        ResumenDiario summary = await _stats.ObtenerResumenDiarioAsync(_clock.Today);
+        ScreenScore = summary.Puntaje;
+        CompletedText = summary.DescansosTomados.ToString();
     }
 
     public void Dispose()
     {
-        _scheduler.Ticked -= OnTick;
+        _scheduler.Tic -= OnTick;
     }
 }
 

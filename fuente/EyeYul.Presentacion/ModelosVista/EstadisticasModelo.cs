@@ -10,60 +10,60 @@ namespace EyeYul.Presentacion.ModelosVista;
 
 public sealed partial class EstadisticasModelo : ObservableObject
 {
-    private readonly ServicioEstadisticas _stats;
+    private readonly ServicioEstadisticas _estadisticas;
 
-    private readonly IReloj _clock;
-
-    [ObservableProperty]
-    private int _score;
+    private readonly IReloj _reloj;
 
     [ObservableProperty]
-    private string _grade = string.Empty;
+    private int _puntaje;
 
     [ObservableProperty]
-    private int _breaksTaken;
+    private string _calificacion = string.Empty;
 
     [ObservableProperty]
-    private int _breaksSkipped;
+    private int _descansosTomados;
 
     [ObservableProperty]
-    private string _activeTime = "0h 0m";
+    private int _descansosOmitidos;
 
-    public ObservableCollection<UsageRow> TopApps { get; } = [];
+    [ObservableProperty]
+    private string _tiempoActivo = "0h 0m";
 
-    public ObservableCollection<UsageRow> TopSites { get; } = [];
+    public ObservableCollection<FilaUso> AppsPrincipales { get; } = [];
 
-    public EstadisticasModelo(ServicioEstadisticas stats, IReloj clock)
+    public ObservableCollection<FilaUso> SitiosPrincipales { get; } = [];
+
+    public EstadisticasModelo(ServicioEstadisticas estadisticas, IReloj reloj)
     {
-        _stats = stats;
-        _clock = clock;
+        _estadisticas = estadisticas;
+        _reloj = reloj;
     }
 
     [RelayCommand]
-    public async Task RefreshAsync()
+    public async Task RefrescarAsync()
     {
-        DailyStatsSummary summary = await _stats.GetDailySummaryAsync(_clock.Today);
+        ResumenDiario resumen = await _estadisticas.ObtenerResumenDiarioAsync(_reloj.Today);
 
-        Score = summary.Score;
-        Grade = ScreenScoreRules.Grade(summary.Score);
-        BreaksTaken = summary.BreaksTaken;
-        BreaksSkipped = summary.BreaksSkipped;
-        ActiveTime = Format(summary.ActiveTime);
+        Puntaje = resumen.Puntaje;
+        Calificacion = ReglasPuntajeVisual.Calificacion(resumen.Puntaje);
+        DescansosTomados = resumen.DescansosTomados;
+        DescansosOmitidos = resumen.DescansosOmitidos;
+        TiempoActivo = Formatear(resumen.TiempoActivo);
 
-        TopApps.Clear();
-        foreach (UsoApp a in summary.TopApps)
+        AppsPrincipales.Clear();
+        foreach (UsoApp app in resumen.AppsPrincipales)
         {
-            TopApps.Add(new UsageRow(a.FriendlyName ?? a.ProcessName, Format(a.Foreground)));
+            AppsPrincipales.Add(new FilaUso(app.NombreAmigable ?? app.NombreProceso, Formatear(app.PrimerPlano)));
         }
 
-        TopSites.Clear();
-        foreach (UsoSitioWeb w in summary.TopSites)
+        SitiosPrincipales.Clear();
+        foreach (UsoSitioWeb sitio in resumen.SitiosPrincipales)
         {
-            TopSites.Add(new UsageRow(w.Domain, Format(w.ActiveTime)));
+            SitiosPrincipales.Add(new FilaUso(sitio.Dominio, Formatear(sitio.TiempoActivo)));
         }
     }
 
-    private static string Format(TimeSpan t) => $"{(int)t.TotalHours}h {t.Minutes}m";
+    private static string Formatear(TimeSpan t) => $"{(int)t.TotalHours}h {t.Minutes}m";
 }
 
-public sealed record UsageRow(string Name, string Time);
+public sealed record FilaUso(string Nombre, string Tiempo);

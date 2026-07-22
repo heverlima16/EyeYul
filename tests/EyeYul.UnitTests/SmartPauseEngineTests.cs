@@ -18,7 +18,7 @@ public class SmartPauseEngineTests
     [Fact]
     public void CleanState_AllowsBreak()
     {
-        Assert.Equal(PauseDecision.Allow, _engine.Evaluate(Snap(EstadoActividad.None), Defaults));
+        Assert.Equal(DecisionPausa.Permitir, _engine.Evaluar(Snap(EstadoActividad.Ninguno), Defaults));
     }
 
     [Fact]
@@ -26,39 +26,39 @@ public class SmartPauseEngineTests
     {
         var settings = new SmartPauseSettings { Enabled = false };
 
-        Assert.Equal(PauseDecision.Allow, _engine.Evaluate(Snap(EstadoActividad.Fullscreen), settings));
+        Assert.Equal(DecisionPausa.Permitir, _engine.Evaluar(Snap(EstadoActividad.PantallaCompleta), settings));
     }
 
     [Fact]
     public void Fullscreen_IsSuppressed_WhenRespected()
     {
         Assert.Equal(
-            PauseDecision.SuppressFullscreen,
-            _engine.Evaluate(Snap(EstadoActividad.Fullscreen), Defaults));
+            DecisionPausa.SuprimirPantallaCompleta,
+            _engine.Evaluar(Snap(EstadoActividad.PantallaCompleta), Defaults));
     }
 
     [Fact]
     public void Meeting_IsSuppressed_WhenRespected()
     {
         Assert.Equal(
-            PauseDecision.SuppressMeeting,
-            _engine.Evaluate(Snap(EstadoActividad.MicOrCameraInUse), Defaults));
+            DecisionPausa.SuprimirReunion,
+            _engine.Evaluar(Snap(EstadoActividad.MicOCamaraEnUso), Defaults));
     }
 
     [Fact]
     public void Idle_BeyondThreshold_IsDeferred()
     {
-        ActivitySnapshot snapshot = Snap(EstadoActividad.Idle, TimeSpan.FromMinutes(5));
+        ActivitySnapshot snapshot = Snap(EstadoActividad.Inactivo, TimeSpan.FromMinutes(5));
 
-        Assert.Equal(PauseDecision.DeferIdle, _engine.Evaluate(snapshot, Defaults));
+        Assert.Equal(DecisionPausa.AplazarPorAusencia, _engine.Evaluar(snapshot, Defaults));
     }
 
     [Fact]
     public void Idle_BelowThreshold_DoesNotDefer()
     {
-        ActivitySnapshot snapshot = Snap(EstadoActividad.Idle, TimeSpan.FromSeconds(30));
+        ActivitySnapshot snapshot = Snap(EstadoActividad.Inactivo, TimeSpan.FromSeconds(30));
 
-        Assert.Equal(PauseDecision.Allow, _engine.Evaluate(snapshot, Defaults));
+        Assert.Equal(DecisionPausa.Permitir, _engine.Evaluar(snapshot, Defaults));
     }
 
     [Fact]
@@ -67,15 +67,15 @@ public class SmartPauseEngineTests
         var settings = new SmartPauseSettings { RespectMeetings = false };
 
         Assert.Equal(
-            PauseDecision.Allow,
-            _engine.Evaluate(Snap(EstadoActividad.MicOrCameraInUse), settings));
+            DecisionPausa.Permitir,
+            _engine.Evaluar(Snap(EstadoActividad.MicOCamaraEnUso), settings));
     }
 
     [Fact]
     public void ScreenRecording_AlwaysSuppressed()
     {
         Assert.Equal(
-            PauseDecision.SuppressScreenRecording,
-            _engine.Evaluate(Snap(EstadoActividad.ScreenRecording), Defaults));
+            DecisionPausa.SuprimirGrabacionPantalla,
+            _engine.Evaluar(Snap(EstadoActividad.GrabandoPantalla), Defaults));
     }
 }

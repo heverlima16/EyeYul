@@ -4,14 +4,14 @@ public sealed class UsoSitioWeb
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
-    public DateOnly Date { get; init; }
+    public DateOnly Fecha { get; init; }
 
-    public string Domain { get; init; } = string.Empty;
+    public string Dominio { get; init; } = string.Empty;
 
-    public TimeSpan ActiveTime { get; set; }
+    public TimeSpan TiempoActivo { get; set; }
 
-    public void Add(TimeSpan delta)
+    public void Agregar(TimeSpan delta)
     {
-        ActiveTime += delta;
+        TiempoActivo += delta;
     }
 }

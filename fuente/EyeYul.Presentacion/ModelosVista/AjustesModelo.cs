@@ -71,8 +71,14 @@ public sealed partial class AjustesModelo : ObservableObject
     {
         AjustesEyeYul s = _store.Current;
 
-        s.Descansos.Interval = TimeSpan.FromMinutes(Math.Max(1.0, IntervalMinutes));
-        s.Descansos.Duration = TimeSpan.FromSeconds(Math.Max(5.0, DurationSeconds));
+        // Los campos se digitan, asi que se recortan al rango valido y se
+        // devuelve el valor corregido a la UI en vez de guardar algo absurdo.
+        IntervalMinutes = Math.Clamp(IntervalMinutes, 1.0, 120.0);
+        DurationSeconds = Math.Clamp(DurationSeconds, 5.0, 600.0);
+        MaxSnoozesPerDay = Math.Clamp(MaxSnoozesPerDay, 0, 30);
+
+        s.Descansos.Interval = TimeSpan.FromMinutes(IntervalMinutes);
+        s.Descansos.Duration = TimeSpan.FromSeconds(DurationSeconds);
         s.SmartPause.Enabled = SmartPauseEnabled;
         s.SmartPause.RespectFullscreen = RespectFullscreen;
         s.SmartPause.RespectMeetings = RespectMeetings;

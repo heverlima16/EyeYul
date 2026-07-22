@@ -78,9 +78,18 @@ la UI se suscriba a sus eventos) y como hosted service.
 ## Convenciones
 
 - **Nombres en español** para tipos y archivos de dominio y servicios (`Descanso`,
-  `ProgramadorDescansos`). Las interfaces de repositorio conservan nombres en inglés
-  por consistencia con las existentes (`IBreakRepository`). Los tests usan nombres en
-  inglés con guion bajo (`PerfectDay_StaysAt100`).
+  `ProgramadorDescansos`), y también para **tablas, columnas y propiedades de entidad**
+  (`descansos.ProgramadoEn`, `Descanso.DuracionPlanificada`). Las interfaces de
+  repositorio conservan nombres en inglés (`IBreakRepository`), igual que las clases de
+  `Configuracion/AjustesEyeYul.cs`: **sus propiedades son las claves de `settings.json`**
+  y renombrarlas rompería los ajustes ya guardados en las máquinas de los usuarios.
+  Los tests usan nombres en inglés con guion bajo (`PerfectDay_StaysAt100`).
+- El esquema SQLite nació en inglés. `BaseDatosSqlite.MigrarEsquemaIngles` renombra
+  tablas y columnas en caliente al arrancar; es idempotente y **debe correr antes** de
+  los `CREATE TABLE IF NOT EXISTS`, o la tabla nueva se crearía vacía y el historial
+  quedaría huérfano.
+- Los enums persistidos (`ResultadoDescanso`, `TipoDescanso`) guardan su valor numérico
+  en la BD: se pueden renombrar los miembros, **nunca reordenarlos**.
 - **`IReloj` en vez de `DateTime.Now`** en Dominio y Aplicacion: es lo que hace
   testeable la lógica de tiempo.
 - **Toda regla pura vive en `Dominio/Reglas/`** como función estática, sin I/O ni
@@ -103,8 +112,8 @@ overlay, multi-monitor, bandeja) compilan perfectamente y solo se ven ejecutánd
 Tras un cambio de UI, ejecutar la app y comprobarlo **en tema claro y oscuro**.
 
 Si una pausa no aparece al llegar el temporizador a cero, casi siempre es Smart Pause
-suprimiéndola. Revisar `ProgramadorDescansos.UltimaSupresion` y la tabla `breaks`,
-cuya columna `Outcome` es `0=Pending 1=Completed 2=Snoozed 3=Skipped 4=Suppressed`.
+suprimiéndola. Revisar `ProgramadorDescansos.UltimaSupresion` y la tabla `descansos`,
+cuya columna `Resultado` es `0=Pendiente 1=Completado 2=Aplazado 3=Omitido 4=Suprimido`.
 
 ## Skills
 

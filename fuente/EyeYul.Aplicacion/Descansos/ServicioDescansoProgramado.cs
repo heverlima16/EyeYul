@@ -3,7 +3,7 @@ using EyeYul.Dominio.Entidades;
 
 namespace EyeYul.Aplicacion.Descansos;
 
-public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repository, IReloj clock)
+public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositorio, IReloj reloj)
 {
     private readonly object _sync = new();
 
@@ -11,7 +11,7 @@ public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositor
 
     private readonly Dictionary<Guid, DateTimeOffset> _ultimoDisparoPorPausa = new();
 
-    public async Task<IReadOnlyList<DescansoProgramado>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<DescansoProgramado>> ObtenerTodosAsync(CancellationToken ct = default)
     {
         lock (_sync)
         {
@@ -21,7 +21,7 @@ public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositor
             }
         }
 
-        IReadOnlyList<DescansoProgramado> desdeBaseDatos = await repository.GetAllAsync(ct);
+        IReadOnlyList<DescansoProgramado> desdeBaseDatos = await repositorio.GetAllAsync(ct);
 
         lock (_sync)
         {
@@ -30,15 +30,15 @@ public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositor
         }
     }
 
-    public async Task SaveAsync(DescansoProgramado plannedBreak, CancellationToken ct = default)
+    public async Task GuardarAsync(DescansoProgramado descansoProgramado, CancellationToken ct = default)
     {
-        await repository.UpsertAsync(plannedBreak, ct);
+        await repositorio.UpsertAsync(descansoProgramado, ct);
         InvalidarCache();
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    public async Task EliminarAsync(Guid id, CancellationToken ct = default)
     {
-        await repository.DeleteAsync(id, ct);
+        await repositorio.DeleteAsync(id, ct);
         InvalidarCache();
     }
 
@@ -50,22 +50,22 @@ public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositor
         }
     }
 
-    public async Task<DescansoProgramado?> GetDueAsync(TimeSpan tolerance, CancellationToken ct = default)
+    public async Task<DescansoProgramado?> ObtenerPendienteAsync(TimeSpan tolerancia, CancellationToken ct = default)
     {
-        DateTimeOffset now = clock.Now;
+        DateTimeOffset ahora = reloj.Now;
 
-        foreach (DescansoProgramado pausa in await GetAllAsync(ct))
+        foreach (DescansoProgramado pausa in await ObtenerTodosAsync(ct))
         {
-            if (!pausa.OccursOn(now.DayOfWeek))
+            if (!pausa.OcurreEn(ahora.DayOfWeek))
             {
                 continue;
             }
 
             var programadaHoy = new DateTimeOffset(
-                now.Year, now.Month, now.Day, pausa.TimeOfDay.Hour, pausa.TimeOfDay.Minute, 0, now.Offset);
+                ahora.Year, ahora.Month, ahora.Day, pausa.HoraDelDia.Hour, pausa.HoraDelDia.Minute, 0, ahora.Offset);
 
-            TimeSpan retraso = now - programadaHoy;
-            if (retraso < TimeSpan.Zero || retraso > tolerance)
+            TimeSpan retraso = ahora - programadaHoy;
+            if (retraso < TimeSpan.Zero || retraso > tolerancia)
             {
                 continue;
             }
@@ -87,10 +87,10 @@ public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositor
         return null;
     }
 
-    public async Task<DateTimeOffset?> NextOccurrenceAsync(CancellationToken ct = default)
+    public async Task<DateTimeOffset?> ProximaOcurrenciaAsync(CancellationToken ct = default)
     {
-        return (await GetAllAsync(ct))
-            .Select(pausa => pausa.NextOccurrence(clock.Now))
+        return (await ObtenerTodosAsync(ct))
+            .Select(pausa => pausa.ProximaOcurrencia(reloj.Now))
             .Where(fecha => fecha.HasValue)
             .OrderBy(fecha => fecha)
             .FirstOrDefault();

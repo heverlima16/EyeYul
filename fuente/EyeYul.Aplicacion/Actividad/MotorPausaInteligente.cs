@@ -6,61 +6,61 @@ namespace EyeYul.Aplicacion.Actividad;
 
 public sealed class MotorPausaInteligente
 {
-    public PauseDecision Evaluate(ActivitySnapshot snapshot, SmartPauseSettings settings)
+    public DecisionPausa Evaluar(ActivitySnapshot muestra, SmartPauseSettings ajustes)
     {
-        if (!settings.Enabled)
+        if (!ajustes.Enabled)
         {
-            return PauseDecision.Allow;
+            return DecisionPausa.Permitir;
         }
 
-        EstadoActividad state = snapshot.State;
+        EstadoActividad estado = muestra.State;
 
-        if (state.HasFlag(EstadoActividad.Idle) && snapshot.IdleTime >= settings.IdleThreshold)
+        if (estado.HasFlag(EstadoActividad.Inactivo) && muestra.IdleTime >= ajustes.IdleThreshold)
         {
-            return PauseDecision.DeferIdle;
+            return DecisionPausa.AplazarPorAusencia;
         }
 
-        if (settings.RespectFullscreen && state.HasFlag(EstadoActividad.Fullscreen))
+        if (ajustes.RespectFullscreen && estado.HasFlag(EstadoActividad.PantallaCompleta))
         {
-            return PauseDecision.SuppressFullscreen;
+            return DecisionPausa.SuprimirPantallaCompleta;
         }
 
-        if (settings.RespectMeetings && state.HasFlag(EstadoActividad.MicOrCameraInUse))
+        if (ajustes.RespectMeetings && estado.HasFlag(EstadoActividad.MicOCamaraEnUso))
         {
-            return PauseDecision.SuppressMeeting;
+            return DecisionPausa.SuprimirReunion;
         }
 
-        if (settings.RespectMediaPlayback && state.HasFlag(EstadoActividad.MediaPlaying))
+        if (ajustes.RespectMediaPlayback && estado.HasFlag(EstadoActividad.ReproduciendoMedios))
         {
-            return PauseDecision.SuppressMedia;
+            return DecisionPausa.SuprimirMedios;
         }
 
-        if (settings.RespectFocusAssist && state.HasFlag(EstadoActividad.FocusAssist))
+        if (ajustes.RespectFocusAssist && estado.HasFlag(EstadoActividad.AsistenteConcentracion))
         {
-            return PauseDecision.SuppressFocusAssist;
+            return DecisionPausa.SuprimirAsistenteConcentracion;
         }
 
-        if (state.HasFlag(EstadoActividad.ScreenRecording))
+        if (estado.HasFlag(EstadoActividad.GrabandoPantalla))
         {
-            return PauseDecision.SuppressScreenRecording;
+            return DecisionPausa.SuprimirGrabacionPantalla;
         }
 
-        return PauseDecision.Allow;
+        return DecisionPausa.Permitir;
     }
 
-    public bool CanBreakNow(ActivitySnapshot snapshot, SmartPauseSettings settings) =>
-        Evaluate(snapshot, settings) == PauseDecision.Allow;
+    public bool PuedePausarAhora(ActivitySnapshot muestra, SmartPauseSettings ajustes) =>
+        Evaluar(muestra, ajustes) == DecisionPausa.Permitir;
 }
 
-public enum PauseDecision
+public enum DecisionPausa
 {
-    Allow,
-    SuppressFullscreen,
-    SuppressMeeting,
-    SuppressMedia,
-    SuppressFocusAssist,
-    SuppressScreenRecording,
-    DeferIdle
+    Permitir,
+    SuprimirPantallaCompleta,
+    SuprimirReunion,
+    SuprimirMedios,
+    SuprimirAsistenteConcentracion,
+    SuprimirGrabacionPantalla,
+    AplazarPorAusencia
 }
 
 /// <summary>
@@ -69,14 +69,14 @@ public enum PauseDecision
 /// </summary>
 public static class MotivoPausa
 {
-    public static string Describir(PauseDecision decision) => decision switch
+    public static string Describir(DecisionPausa decision) => decision switch
     {
-        PauseDecision.SuppressFullscreen => "Pantalla completa detectada",
-        PauseDecision.SuppressMeeting => "Reunion o llamada en curso",
-        PauseDecision.SuppressMedia => "Reproduccion de video activa",
-        PauseDecision.SuppressFocusAssist => "Modo No molestar activo",
-        PauseDecision.SuppressScreenRecording => "Grabacion de pantalla activa",
-        PauseDecision.DeferIdle => "Estabas ausente",
+        DecisionPausa.SuprimirPantallaCompleta => "Pantalla completa detectada",
+        DecisionPausa.SuprimirReunion => "Reunion o llamada en curso",
+        DecisionPausa.SuprimirMedios => "Reproduccion de video activa",
+        DecisionPausa.SuprimirAsistenteConcentracion => "Modo No molestar activo",
+        DecisionPausa.SuprimirGrabacionPantalla => "Grabacion de pantalla activa",
+        DecisionPausa.AplazarPorAusencia => "Estabas ausente",
         _ => "Pausa disponible"
     };
 }

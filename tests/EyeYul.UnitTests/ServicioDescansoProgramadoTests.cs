@@ -46,14 +46,14 @@ public class ServicioDescansoProgramadoTests
     {
         var pb = new DescansoProgramado
         {
-            Name = "Almuerzo",
-            TimeOfDay = new TimeOnly(hora, minuto),
-            Enabled = true
+            Nombre = "Almuerzo",
+            HoraDelDia = new TimeOnly(hora, minuto),
+            Habilitado = true
         };
 
         foreach (DayOfWeek d in dias)
         {
-            pb.Days.Add(d);
+            pb.Dias.Add(d);
         }
 
         return pb;
@@ -65,7 +65,7 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Monday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am.AddSeconds(10)));
 
-        DescansoProgramado? due = await servicio.GetDueAsync(TimeSpan.FromSeconds(30));
+        DescansoProgramado? due = await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30));
 
         Assert.NotNull(due);
     }
@@ -76,7 +76,7 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Monday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am.AddMinutes(5)));
 
-        Assert.Null(await servicio.GetDueAsync(TimeSpan.FromSeconds(30)));
+        Assert.Null(await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Monday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am.AddSeconds(-5)));
 
-        Assert.Null(await servicio.GetDueAsync(TimeSpan.FromSeconds(30)));
+        Assert.Null(await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
@@ -95,8 +95,8 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Monday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am.AddSeconds(5)));
 
-        Assert.NotNull(await servicio.GetDueAsync(TimeSpan.FromSeconds(30)));
-        Assert.Null(await servicio.GetDueAsync(TimeSpan.FromSeconds(30)));
+        Assert.NotNull(await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30)));
+        Assert.Null(await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
@@ -105,19 +105,19 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Wednesday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am.AddSeconds(5)));
 
-        Assert.Null(await servicio.GetDueAsync(TimeSpan.FromSeconds(30)));
+        Assert.Null(await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
     public async Task GetDue_IgnoresDisabledBreak()
     {
         DescansoProgramado pausa = PausaA(9, 0, DayOfWeek.Monday);
-        pausa.Enabled = false;
+        pausa.Habilitado = false;
 
         var repo = new RepoPausasEnMemoria(pausa);
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am.AddSeconds(5)));
 
-        Assert.Null(await servicio.GetDueAsync(TimeSpan.FromSeconds(30)));
+        Assert.Null(await servicio.ObtenerPendienteAsync(TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
@@ -126,8 +126,8 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Monday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am));
 
-        await servicio.GetAllAsync();
-        await servicio.GetAllAsync();
+        await servicio.ObtenerTodosAsync();
+        await servicio.ObtenerTodosAsync();
 
         Assert.Equal(1, repo.LlamadasGetAll);
     }
@@ -138,9 +138,9 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(PausaA(9, 0, DayOfWeek.Monday));
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am));
 
-        await servicio.GetAllAsync();
-        await servicio.SaveAsync(PausaA(13, 0, DayOfWeek.Tuesday));
-        IReadOnlyList<DescansoProgramado> despues = await servicio.GetAllAsync();
+        await servicio.ObtenerTodosAsync();
+        await servicio.GuardarAsync(PausaA(13, 0, DayOfWeek.Tuesday));
+        IReadOnlyList<DescansoProgramado> despues = await servicio.ObtenerTodosAsync();
 
         Assert.Equal(2, repo.LlamadasGetAll);
         Assert.Equal(2, despues.Count);
@@ -153,10 +153,10 @@ public class ServicioDescansoProgramadoTests
         var repo = new RepoPausasEnMemoria(pausa);
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am));
 
-        await servicio.GetAllAsync();
-        await servicio.DeleteAsync(pausa.Id);
+        await servicio.ObtenerTodosAsync();
+        await servicio.EliminarAsync(pausa.Id);
 
-        Assert.Empty(await servicio.GetAllAsync());
+        Assert.Empty(await servicio.ObtenerTodosAsync());
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class ServicioDescansoProgramadoTests
 
         var servicio = new ServicioDescansoProgramado(repo, new RelojFijo(Lunes9Am));
 
-        DateTimeOffset? siguiente = await servicio.NextOccurrenceAsync();
+        DateTimeOffset? siguiente = await servicio.ProximaOcurrenciaAsync();
 
         Assert.NotNull(siguiente);
         Assert.Equal(11, siguiente.Value.Hour);
@@ -180,6 +180,6 @@ public class ServicioDescansoProgramadoTests
         var servicio = new ServicioDescansoProgramado(
             new RepoPausasEnMemoria(), new RelojFijo(Lunes9Am));
 
-        Assert.Null(await servicio.NextOccurrenceAsync());
+        Assert.Null(await servicio.ProximaOcurrenciaAsync());
     }
 }

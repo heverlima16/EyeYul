@@ -8,9 +8,9 @@ public class DuracionPausaTests
     [Fact]
     public void PresetsHaveExpectedValues()
     {
-        Assert.Equal(TimeSpan.FromMinutes(1), DuracionPausa.OneMinute.Value);
-        Assert.Equal(TimeSpan.FromMinutes(5), DuracionPausa.FiveMinutes.Value);
-        Assert.Equal(TimeSpan.FromMinutes(15), DuracionPausa.FifteenMinutes.Value);
+        Assert.Equal(TimeSpan.FromMinutes(1), DuracionPausa.UnMinuto.Valor);
+        Assert.Equal(TimeSpan.FromMinutes(5), DuracionPausa.CincoMinutos.Valor);
+        Assert.Equal(TimeSpan.FromMinutes(15), DuracionPausa.QuinceMinutos.Valor);
     }
 
     [Theory]
@@ -19,14 +19,14 @@ public class DuracionPausaTests
     [InlineData(15, "+15")]
     public void ToString_RendersSnoozeLabel(int minutos, string esperado)
     {
-        Assert.Equal(esperado, DuracionPausa.FromMinutes(minutos).ToString());
+        Assert.Equal(esperado, DuracionPausa.DesdeMinutos(minutos).ToString());
     }
 
     [Fact]
     public void FromMinutes_EqualsMatchingPreset()
     {
         // Es un record struct: la igualdad es por valor.
-        Assert.Equal(DuracionPausa.FiveMinutes, DuracionPausa.FromMinutes(5));
-        Assert.NotEqual(DuracionPausa.FiveMinutes, DuracionPausa.FromMinutes(6));
+        Assert.Equal(DuracionPausa.CincoMinutos, DuracionPausa.DesdeMinutos(5));
+        Assert.NotEqual(DuracionPausa.CincoMinutos, DuracionPausa.DesdeMinutos(6));
     }
 }

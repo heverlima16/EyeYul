@@ -27,13 +27,13 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="Screen Score" FontSize="13" Foreground="{DynamicResource MutedBrush}" />
-                    <TextBlock Text="{Binding Score}" FontSize="64" FontWeight="Bold" Foreground="{DynamicResource TerracottaBrush}" />
-                    <TextBlock Text="{Binding Grade}" FontSize="15" Foreground="{DynamicResource InkBrush}" />
+                    <TextBlock Text="{Binding Puntaje}" FontSize="64" FontWeight="Bold" Foreground="{DynamicResource TerracottaBrush}" />
+                    <TextBlock Text="{Binding Calificacion}" FontSize="15" Foreground="{DynamicResource InkBrush}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding BreaksTaken, StringFormat=Pausas: {0}}" Foreground="{DynamicResource InkBrush}" FontSize="15" Margin="0,2" />
-                    <TextBlock Text="{Binding BreaksSkipped, StringFormat=Omitidas: {0}}" Foreground="{DynamicResource MutedBrush}" FontSize="15" Margin="0,2" />
-                    <TextBlock Text="{Binding ActiveTime, StringFormat=Activo: {0}}" Foreground="{DynamicResource MutedBrush}" FontSize="15" Margin="0,2" />
+                    <TextBlock Text="{Binding DescansosTomados, StringFormat=Pausas: {0}}" Foreground="{DynamicResource InkBrush}" FontSize="15" Margin="0,2" />
+                    <TextBlock Text="{Binding DescansosOmitidos, StringFormat=Omitidas: {0}}" Foreground="{DynamicResource MutedBrush}" FontSize="15" Margin="0,2" />
+                    <TextBlock Text="{Binding TiempoActivo, StringFormat=Activo: {0}}" Foreground="{DynamicResource MutedBrush}" FontSize="15" Margin="0,2" />
                 </StackPanel>
             </Grid>
         </comp:TarjetaBase>
@@ -48,12 +48,12 @@
             <comp:TarjetaBase Grid.Column="0">
                 <DockPanel>
                     <comp:EtiquetaTitulo DockPanel.Dock="Top" Texto="Apps" />
-                    <ItemsControl ItemsSource="{Binding TopApps}">
+                    <ItemsControl ItemsSource="{Binding AppsPrincipales}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <DockPanel Margin="0,5">
-                                    <TextBlock Text="{Binding Time}" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}" />
-                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Tiempo}" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}" />
+                                    <TextBlock Text="{Binding Nombre}" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -64,12 +64,12 @@
             <comp:TarjetaBase Grid.Column="2">
                 <DockPanel>
                     <comp:EtiquetaTitulo DockPanel.Dock="Top" Texto="Sitios" />
-                    <ItemsControl ItemsSource="{Binding TopSites}">
+                    <ItemsControl ItemsSource="{Binding SitiosPrincipales}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <DockPanel Margin="0,5">
-                                    <TextBlock Text="{Binding Time}" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}" />
-                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Tiempo}" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}" />
+                                    <TextBlock Text="{Binding Nombre}" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

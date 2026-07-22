@@ -4,41 +4,41 @@ public sealed class DescansoProgramado
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
-    public string Name { get; set; } = "Pausa planificada";
+    public string Nombre { get; set; } = "Pausa planificada";
 
-    public TimeOnly TimeOfDay { get; set; }
+    public TimeOnly HoraDelDia { get; set; }
 
-    public HashSet<DayOfWeek> Days { get; init; } = new();
+    public HashSet<DayOfWeek> Dias { get; init; } = new();
 
-    public TimeSpan Duration { get; set; } = TimeSpan.FromMinutes(5);
+    public TimeSpan Duracion { get; set; } = TimeSpan.FromMinutes(5);
 
-    public bool Enabled { get; set; } = true;
+    public bool Habilitado { get; set; } = true;
 
-    public bool CountsAwayTime { get; set; } = true;
+    public bool CuentaTiempoAusente { get; set; } = true;
 
-    public bool OccursOn(DayOfWeek day) => Enabled && Days.Contains(day);
+    public bool OcurreEn(DayOfWeek dia) => Habilitado && Dias.Contains(dia);
 
-    public DateTimeOffset? NextOccurrence(DateTimeOffset from)
+    public DateTimeOffset? ProximaOcurrencia(DateTimeOffset desde)
     {
-        if (!Enabled || Days.Count == 0)
+        if (!Habilitado || Dias.Count == 0)
         {
             return null;
         }
 
         for (int i = 0; i < 8; i++)
         {
-            DateTime day = from.Date.AddDays(i);
-            if (!Days.Contains(day.DayOfWeek))
+            DateTime dia = desde.Date.AddDays(i);
+            if (!Dias.Contains(dia.DayOfWeek))
             {
                 continue;
             }
 
-            var candidate = new DateTimeOffset(
-                day.Year, day.Month, day.Day, TimeOfDay.Hour, TimeOfDay.Minute, 0, from.Offset);
+            var candidata = new DateTimeOffset(
+                dia.Year, dia.Month, dia.Day, HoraDelDia.Hour, HoraDelDia.Minute, 0, desde.Offset);
 
-            if (candidate > from)
+            if (candidata > desde)
             {
-                return candidate;
+                return candidata;
             }
         }
 

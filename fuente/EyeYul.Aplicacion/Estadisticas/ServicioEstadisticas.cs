@@ -4,35 +4,35 @@ using EyeYul.Dominio.Entidades;
 namespace EyeYul.Aplicacion.Estadisticas;
 
 public sealed class ServicioEstadisticas(
-    IScreenScoreRepository scoreRepo,
-    IAppUsageRepository appRepo,
-    IWebsiteUsageRepository webRepo,
-    ISessionRepository sessionRepo)
+    IScreenScoreRepository repoPuntaje,
+    IAppUsageRepository repoApps,
+    IWebsiteUsageRepository repoSitios,
+    ISessionRepository repoSesiones)
 {
-    public async Task<DailyStatsSummary> GetDailySummaryAsync(
-        DateOnly date, int topN = 5, CancellationToken ct = default)
+    public async Task<ResumenDiario> ObtenerResumenDiarioAsync(
+        DateOnly fecha, int primeros = 5, CancellationToken ct = default)
     {
-        PuntajeVisualDiario score = await scoreRepo.GetOrCreateAsync(date, ct);
-        IReadOnlyList<UsoApp> apps = await appRepo.GetByDateAsync(date, ct);
-        IReadOnlyList<UsoSitioWeb> sites = await webRepo.GetByDateAsync(date, ct);
-        IReadOnlyList<Sesion> sessions = await sessionRepo.GetByDateAsync(date, ct);
+        PuntajeVisualDiario puntaje = await repoPuntaje.GetOrCreateAsync(fecha, ct);
+        IReadOnlyList<UsoApp> apps = await repoApps.GetByDateAsync(fecha, ct);
+        IReadOnlyList<UsoSitioWeb> sitios = await repoSitios.GetByDateAsync(fecha, ct);
+        IReadOnlyList<Sesion> sesiones = await repoSesiones.GetByDateAsync(fecha, ct);
 
-        return new DailyStatsSummary(
-            Date: date,
-            Score: score.Score,
-            BreaksTaken: score.BreaksTaken,
-            BreaksSkipped: score.BreaksSkipped,
-            ActiveTime: sessions.Aggregate(TimeSpan.Zero, (acc, s) => acc + s.ActiveTime),
-            TopApps: apps.OrderByDescending(a => a.Foreground).Take(topN).ToList(),
-            TopSites: sites.OrderByDescending(w => w.ActiveTime).Take(topN).ToList());
+        return new ResumenDiario(
+            Fecha: fecha,
+            Puntaje: puntaje.Puntaje,
+            DescansosTomados: puntaje.DescansosTomados,
+            DescansosOmitidos: puntaje.DescansosOmitidos,
+            TiempoActivo: sesiones.Aggregate(TimeSpan.Zero, (acumulado, s) => acumulado + s.TiempoActivo),
+            AppsPrincipales: apps.OrderByDescending(a => a.PrimerPlano).Take(primeros).ToList(),
+            SitiosPrincipales: sitios.OrderByDescending(s => s.TiempoActivo).Take(primeros).ToList());
     }
 }
 
-public sealed record DailyStatsSummary(
-    DateOnly Date,
-    int Score,
-    int BreaksTaken,
-    int BreaksSkipped,
-    TimeSpan ActiveTime,
-    IReadOnlyList<UsoApp> TopApps,
-    IReadOnlyList<UsoSitioWeb> TopSites);
+public sealed record ResumenDiario(
+    DateOnly Fecha,
+    int Puntaje,
+    int DescansosTomados,
+    int DescansosOmitidos,
+    TimeSpan TiempoActivo,
+    IReadOnlyList<UsoApp> AppsPrincipales,
+    IReadOnlyList<UsoSitioWeb> SitiosPrincipales);

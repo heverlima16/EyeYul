@@ -4,16 +4,16 @@ public sealed class UsoApp
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
-    public DateOnly Date { get; init; }
+    public DateOnly Fecha { get; init; }
 
-    public string ProcessName { get; init; } = string.Empty;
+    public string NombreProceso { get; init; } = string.Empty;
 
-    public string? FriendlyName { get; set; }
+    public string? NombreAmigable { get; set; }
 
-    public TimeSpan Foreground { get; set; }
+    public TimeSpan PrimerPlano { get; set; }
 
-    public void Add(TimeSpan delta)
+    public void Agregar(TimeSpan delta)
     {
-        Foreground += delta;
+        PrimerPlano += delta;
     }
 }

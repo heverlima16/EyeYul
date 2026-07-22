@@ -4,78 +4,78 @@ using Microsoft.Data.Sqlite;
 
 namespace EyeYul.Infraestructura.Persistencia;
 
-public sealed class RepositorioDescansoProgramado(BaseDatosSqlite db) : IPlannedBreakRepository
+public sealed class RepositorioDescansoProgramado(BaseDatosSqlite bd) : IPlannedBreakRepository
 {
     public async Task<IReadOnlyList<DescansoProgramado>> GetAllAsync(CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            SELECT Id, Name, TimeOfDay, Days, DurationSec, Enabled, CountsAwayTime FROM planned_breaks
+            SELECT Id, Nombre, HoraDelDia, Dias, DuracionSeg, Habilitado, CuentaTiempoAusente FROM descansos_programados
             """;
 
-        var list = new List<DescansoProgramado>();
-        await using SqliteDataReader r = await cmd.ExecuteReaderAsync(ct);
-        while (await r.ReadAsync(ct))
+        var lista = new List<DescansoProgramado>();
+        await using SqliteDataReader lector = await cmd.ExecuteReaderAsync(ct);
+        while (await lector.ReadAsync(ct))
         {
-            var pb = new DescansoProgramado
+            var programado = new DescansoProgramado
             {
-                Id = Guid.Parse(r.GetString(0)),
-                Name = r.GetString(1),
-                TimeOfDay = TimeOnly.Parse(r.GetString(2)),
-                Duration = TimeSpan.FromSeconds(r.GetDouble(4)),
-                Enabled = r.GetInt32(5) != 0,
-                CountsAwayTime = r.GetInt32(6) != 0
+                Id = Guid.Parse(lector.GetString(0)),
+                Nombre = lector.GetString(1),
+                HoraDelDia = TimeOnly.Parse(lector.GetString(2)),
+                Duracion = TimeSpan.FromSeconds(lector.GetDouble(4)),
+                Habilitado = lector.GetInt32(5) != 0,
+                CuentaTiempoAusente = lector.GetInt32(6) != 0
             };
 
-            foreach (DayOfWeek d in ParseDays(r.GetString(3)))
+            foreach (DayOfWeek dia in LeerDias(lector.GetString(3)))
             {
-                pb.Days.Add(d);
+                programado.Dias.Add(dia);
             }
 
-            list.Add(pb);
+            lista.Add(programado);
         }
 
-        return list;
+        return lista;
     }
 
-    public async Task UpsertAsync(DescansoProgramado pb, CancellationToken ct = default)
+    public async Task UpsertAsync(DescansoProgramado programado, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            INSERT INTO planned_breaks (Id, Name, TimeOfDay, Days, DurationSec, Enabled, CountsAwayTime)
-            VALUES ($id, $name, $time, $days, $dur, $enabled, $away)
+            INSERT INTO descansos_programados (Id, Nombre, HoraDelDia, Dias, DuracionSeg, Habilitado, CuentaTiempoAusente)
+            VALUES ($id, $nombre, $hora, $dias, $duracion, $habilitado, $ausente)
             ON CONFLICT(Id) DO UPDATE SET
-                Name=$name, TimeOfDay=$time, Days=$days, DurationSec=$dur,
-                Enabled=$enabled, CountsAwayTime=$away;
+                Nombre=$nombre, HoraDelDia=$hora, Dias=$dias, DuracionSeg=$duracion,
+                Habilitado=$habilitado, CuentaTiempoAusente=$ausente;
             """;
 
-        cmd.Parameters.AddWithValue("$id", pb.Id.ToString());
-        cmd.Parameters.AddWithValue("$name", pb.Name);
-        cmd.Parameters.AddWithValue("$time", pb.TimeOfDay.ToString("HH:mm"));
-        cmd.Parameters.AddWithValue("$days", string.Join(',', pb.Days.Select(d => (int)d)));
-        cmd.Parameters.AddWithValue("$dur", pb.Duration.TotalSeconds);
-        cmd.Parameters.AddWithValue("$enabled", pb.Enabled ? 1 : 0);
-        cmd.Parameters.AddWithValue("$away", pb.CountsAwayTime ? 1 : 0);
+        cmd.Parameters.AddWithValue("$id", programado.Id.ToString());
+        cmd.Parameters.AddWithValue("$nombre", programado.Nombre);
+        cmd.Parameters.AddWithValue("$hora", programado.HoraDelDia.ToString("HH:mm"));
+        cmd.Parameters.AddWithValue("$dias", string.Join(',', programado.Dias.Select(d => (int)d)));
+        cmd.Parameters.AddWithValue("$duracion", programado.Duracion.TotalSeconds);
+        cmd.Parameters.AddWithValue("$habilitado", programado.Habilitado ? 1 : 0);
+        cmd.Parameters.AddWithValue("$ausente", programado.CuentaTiempoAusente ? 1 : 0);
 
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
-        cmd.CommandText = "DELETE FROM planned_breaks WHERE Id=$id";
+        cmd.CommandText = "DELETE FROM descansos_programados WHERE Id=$id";
         cmd.Parameters.AddWithValue("$id", id.ToString());
 
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    private static IEnumerable<DayOfWeek> ParseDays(string csv) =>
+    private static IEnumerable<DayOfWeek> LeerDias(string csv) =>
         csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
            .Select(s => (DayOfWeek)int.Parse(s));
 }

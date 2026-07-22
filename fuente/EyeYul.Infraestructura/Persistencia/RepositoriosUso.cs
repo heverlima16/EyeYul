@@ -4,96 +4,96 @@ using Microsoft.Data.Sqlite;
 
 namespace EyeYul.Infraestructura.Persistencia;
 
-public sealed class AppUsageRepository(BaseDatosSqlite db) : IAppUsageRepository
+public sealed class RepositorioUsoApp(BaseDatosSqlite bd) : IAppUsageRepository
 {
     public async Task AccumulateAsync(
-        DateOnly date, string processName, string? friendlyName, TimeSpan delta, CancellationToken ct = default)
+        DateOnly fecha, string nombreProceso, string? nombreAmigable, TimeSpan delta, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            INSERT INTO app_usage (DateKey, ProcessName, FriendlyName, ForegroundSec)
-            VALUES ($date, $proc, $friendly, $sec)
-            ON CONFLICT(DateKey, ProcessName) DO UPDATE SET
-                ForegroundSec = ForegroundSec + $sec,
-                FriendlyName = COALESCE($friendly, FriendlyName);
+            INSERT INTO uso_apps (ClaveFecha, NombreProceso, NombreAmigable, PrimerPlanoSeg)
+            VALUES ($fecha, $proceso, $amigable, $segundos)
+            ON CONFLICT(ClaveFecha, NombreProceso) DO UPDATE SET
+                PrimerPlanoSeg = PrimerPlanoSeg + $segundos,
+                NombreAmigable = COALESCE($amigable, NombreAmigable);
             """;
 
-        cmd.Parameters.AddWithValue("$date", BaseDatosSqlite.DateKey(date));
-        cmd.Parameters.AddWithValue("$proc", processName);
-        cmd.Parameters.AddWithValue("$friendly", (object?)friendlyName ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("$sec", delta.TotalSeconds);
+        cmd.Parameters.AddWithValue("$fecha", BaseDatosSqlite.ClaveFecha(fecha));
+        cmd.Parameters.AddWithValue("$proceso", nombreProceso);
+        cmd.Parameters.AddWithValue("$amigable", (object?)nombreAmigable ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$segundos", delta.TotalSeconds);
 
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    public async Task<IReadOnlyList<UsoApp>> GetByDateAsync(DateOnly date, CancellationToken ct = default)
+    public async Task<IReadOnlyList<UsoApp>> GetByDateAsync(DateOnly fecha, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
-        cmd.CommandText = "SELECT ProcessName, FriendlyName, ForegroundSec FROM app_usage WHERE DateKey=$date";
-        cmd.Parameters.AddWithValue("$date", BaseDatosSqlite.DateKey(date));
+        cmd.CommandText = "SELECT NombreProceso, NombreAmigable, PrimerPlanoSeg FROM uso_apps WHERE ClaveFecha=$fecha";
+        cmd.Parameters.AddWithValue("$fecha", BaseDatosSqlite.ClaveFecha(fecha));
 
-        var list = new List<UsoApp>();
-        await using SqliteDataReader r = await cmd.ExecuteReaderAsync(ct);
-        while (await r.ReadAsync(ct))
+        var lista = new List<UsoApp>();
+        await using SqliteDataReader lector = await cmd.ExecuteReaderAsync(ct);
+        while (await lector.ReadAsync(ct))
         {
-            list.Add(new UsoApp
+            lista.Add(new UsoApp
             {
-                Date = date,
-                ProcessName = r.GetString(0),
-                FriendlyName = r.IsDBNull(1) ? null : r.GetString(1),
-                Foreground = TimeSpan.FromSeconds(r.GetDouble(2))
+                Fecha = fecha,
+                NombreProceso = lector.GetString(0),
+                NombreAmigable = lector.IsDBNull(1) ? null : lector.GetString(1),
+                PrimerPlano = TimeSpan.FromSeconds(lector.GetDouble(2))
             });
         }
 
-        return list;
+        return lista;
     }
 }
 
-public sealed class WebsiteUsageRepository(BaseDatosSqlite db) : IWebsiteUsageRepository
+public sealed class RepositorioUsoSitioWeb(BaseDatosSqlite bd) : IWebsiteUsageRepository
 {
     public async Task AccumulateAsync(
-        DateOnly date, string domain, TimeSpan delta, CancellationToken ct = default)
+        DateOnly fecha, string dominio, TimeSpan delta, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            INSERT INTO website_usage (DateKey, Domain, ActiveSec)
-            VALUES ($date, $domain, $sec)
-            ON CONFLICT(DateKey, Domain) DO UPDATE SET ActiveSec = ActiveSec + $sec;
+            INSERT INTO uso_sitios_web (ClaveFecha, Dominio, TiempoActivoSeg)
+            VALUES ($fecha, $dominio, $segundos)
+            ON CONFLICT(ClaveFecha, Dominio) DO UPDATE SET TiempoActivoSeg = TiempoActivoSeg + $segundos;
             """;
 
-        cmd.Parameters.AddWithValue("$date", BaseDatosSqlite.DateKey(date));
-        cmd.Parameters.AddWithValue("$domain", domain);
-        cmd.Parameters.AddWithValue("$sec", delta.TotalSeconds);
+        cmd.Parameters.AddWithValue("$fecha", BaseDatosSqlite.ClaveFecha(fecha));
+        cmd.Parameters.AddWithValue("$dominio", dominio);
+        cmd.Parameters.AddWithValue("$segundos", delta.TotalSeconds);
 
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    public async Task<IReadOnlyList<UsoSitioWeb>> GetByDateAsync(DateOnly date, CancellationToken ct = default)
+    public async Task<IReadOnlyList<UsoSitioWeb>> GetByDateAsync(DateOnly fecha, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
-        cmd.CommandText = "SELECT Domain, ActiveSec FROM website_usage WHERE DateKey=$date";
-        cmd.Parameters.AddWithValue("$date", BaseDatosSqlite.DateKey(date));
+        cmd.CommandText = "SELECT Dominio, TiempoActivoSeg FROM uso_sitios_web WHERE ClaveFecha=$fecha";
+        cmd.Parameters.AddWithValue("$fecha", BaseDatosSqlite.ClaveFecha(fecha));
 
-        var list = new List<UsoSitioWeb>();
-        await using SqliteDataReader r = await cmd.ExecuteReaderAsync(ct);
-        while (await r.ReadAsync(ct))
+        var lista = new List<UsoSitioWeb>();
+        await using SqliteDataReader lector = await cmd.ExecuteReaderAsync(ct);
+        while (await lector.ReadAsync(ct))
         {
-            list.Add(new UsoSitioWeb
+            lista.Add(new UsoSitioWeb
             {
-                Date = date,
-                Domain = r.GetString(0),
-                ActiveTime = TimeSpan.FromSeconds(r.GetDouble(1))
+                Fecha = fecha,
+                Dominio = lector.GetString(0),
+                TiempoActivo = TimeSpan.FromSeconds(lector.GetDouble(1))
             });
         }
 
-        return list;
+        return lista;
     }
 }

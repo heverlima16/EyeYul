@@ -10,9 +10,9 @@ public class DescansoTests
 
     private static Descanso NuevoDescanso() => new()
     {
-        Type = TipoDescanso.Interval,
-        ScheduledAt = Inicio,
-        PlannedDuration = TimeSpan.FromSeconds(20)
+        Tipo = TipoDescanso.Intervalo,
+        ProgramadoEn = Inicio,
+        DuracionPlanificada = TimeSpan.FromSeconds(20)
     };
 
     [Fact]
@@ -20,9 +20,9 @@ public class DescansoTests
     {
         Descanso d = NuevoDescanso();
 
-        Assert.Equal(ResultadoDescanso.Pending, d.Outcome);
-        Assert.False(d.WasRespected);
-        Assert.Equal(0, d.SnoozeCount);
+        Assert.Equal(ResultadoDescanso.Pendiente, d.Resultado);
+        Assert.False(d.FueRespetado);
+        Assert.Equal(0, d.ConteoAplazamientos);
     }
 
     [Fact]
@@ -30,54 +30,54 @@ public class DescansoTests
     {
         Descanso d = NuevoDescanso();
 
-        Assert.Null(d.ActualDuration);
+        Assert.Null(d.DuracionReal);
     }
 
     [Fact]
     public void ActualDuration_IsNull_WhenStartedButNotEnded()
     {
         Descanso d = NuevoDescanso();
-        d.MarkStarted(Inicio);
+        d.MarcarIniciado(Inicio);
 
-        Assert.Null(d.ActualDuration);
+        Assert.Null(d.DuracionReal);
     }
 
     [Fact]
     public void ActualDuration_IsElapsed_WhenStartedAndEnded()
     {
         Descanso d = NuevoDescanso();
-        d.MarkStarted(Inicio);
-        d.MarkCompleted(Inicio.AddSeconds(25));
+        d.MarcarIniciado(Inicio);
+        d.MarcarCompletado(Inicio.AddSeconds(25));
 
-        Assert.Equal(TimeSpan.FromSeconds(25), d.ActualDuration);
+        Assert.Equal(TimeSpan.FromSeconds(25), d.DuracionReal);
     }
 
     [Fact]
     public void MarkCompleted_IsTheOnlyRespectedOutcome()
     {
         Descanso completado = NuevoDescanso();
-        completado.MarkCompleted(Inicio);
+        completado.MarcarCompletado(Inicio);
 
         Descanso omitido = NuevoDescanso();
-        omitido.MarkSkipped(Inicio);
+        omitido.MarcarOmitido(Inicio);
 
         Descanso suprimido = NuevoDescanso();
-        suprimido.MarkSuppressed();
+        suprimido.MarcarSuprimido();
 
-        Assert.True(completado.WasRespected);
-        Assert.False(omitido.WasRespected);
-        Assert.False(suprimido.WasRespected);
+        Assert.True(completado.FueRespetado);
+        Assert.False(omitido.FueRespetado);
+        Assert.False(suprimido.FueRespetado);
     }
 
     [Fact]
     public void MarkStarted_ResetsOutcomeToPending()
     {
         Descanso d = NuevoDescanso();
-        d.MarkSnoozed();
+        d.MarcarAplazado();
 
-        d.MarkStarted(Inicio);
+        d.MarcarIniciado(Inicio);
 
-        Assert.Equal(ResultadoDescanso.Pending, d.Outcome);
+        Assert.Equal(ResultadoDescanso.Pendiente, d.Resultado);
     }
 
     [Fact]
@@ -85,11 +85,11 @@ public class DescansoTests
     {
         Descanso d = NuevoDescanso();
 
-        d.MarkSnoozed();
-        d.MarkSnoozed();
+        d.MarcarAplazado();
+        d.MarcarAplazado();
 
-        Assert.Equal(2, d.SnoozeCount);
-        Assert.Equal(ResultadoDescanso.Snoozed, d.Outcome);
+        Assert.Equal(2, d.ConteoAplazamientos);
+        Assert.Equal(ResultadoDescanso.Aplazado, d.Resultado);
     }
 
     [Fact]
@@ -98,10 +98,10 @@ public class DescansoTests
         // Una pausa suprimida nunca llego a mostrarse: no tiene inicio ni fin.
         Descanso d = NuevoDescanso();
 
-        d.MarkSuppressed();
+        d.MarcarSuprimido();
 
-        Assert.Equal(ResultadoDescanso.Suppressed, d.Outcome);
-        Assert.Null(d.StartedAt);
-        Assert.Null(d.EndedAt);
+        Assert.Equal(ResultadoDescanso.Suprimido, d.Resultado);
+        Assert.Null(d.IniciadoEn);
+        Assert.Null(d.FinalizadoEn);
     }
 }

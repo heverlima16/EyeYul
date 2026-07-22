@@ -5,63 +5,63 @@ using Microsoft.Data.Sqlite;
 
 namespace EyeYul.Infraestructura.Persistencia;
 
-public sealed class RepositorioDescanso(BaseDatosSqlite db) : IBreakRepository
+public sealed class RepositorioDescanso(BaseDatosSqlite bd) : IBreakRepository
 {
-    public async Task AddAsync(Descanso br, CancellationToken ct = default)
+    public async Task AddAsync(Descanso descanso, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            INSERT INTO breaks (Id, Type, ScheduledAt, StartedAt, EndedAt, PlannedDurationSec, Outcome, SnoozeCount, DateKey)
-            VALUES ($id, $type, $sched, $start, $end, $dur, $outcome, $snooze, $date)
+            INSERT INTO descansos (Id, Tipo, ProgramadoEn, IniciadoEn, FinalizadoEn, DuracionPlanificadaSeg, Resultado, ConteoAplazamientos, ClaveFecha)
+            VALUES ($id, $tipo, $programado, $inicio, $fin, $duracion, $resultado, $aplazamientos, $fecha)
             ON CONFLICT(Id) DO UPDATE SET
-                StartedAt=$start, EndedAt=$end, Outcome=$outcome, SnoozeCount=$snooze;
+                IniciadoEn=$inicio, FinalizadoEn=$fin, Resultado=$resultado, ConteoAplazamientos=$aplazamientos;
             """;
 
-        cmd.Parameters.AddWithValue("$id", br.Id.ToString());
-        cmd.Parameters.AddWithValue("$type", (int)br.Type);
-        cmd.Parameters.AddWithValue("$sched", BaseDatosSqlite.Iso(br.ScheduledAt));
-        cmd.Parameters.AddWithValue("$start", (object?)br.StartedAt?.ToString("O") ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("$end", (object?)br.EndedAt?.ToString("O") ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("$dur", br.PlannedDuration.TotalSeconds);
-        cmd.Parameters.AddWithValue("$outcome", (int)br.Outcome);
-        cmd.Parameters.AddWithValue("$snooze", br.SnoozeCount);
+        cmd.Parameters.AddWithValue("$id", descanso.Id.ToString());
+        cmd.Parameters.AddWithValue("$tipo", (int)descanso.Tipo);
+        cmd.Parameters.AddWithValue("$programado", BaseDatosSqlite.Iso(descanso.ProgramadoEn));
+        cmd.Parameters.AddWithValue("$inicio", (object?)descanso.IniciadoEn?.ToString("O") ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$fin", (object?)descanso.FinalizadoEn?.ToString("O") ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$duracion", descanso.DuracionPlanificada.TotalSeconds);
+        cmd.Parameters.AddWithValue("$resultado", (int)descanso.Resultado);
+        cmd.Parameters.AddWithValue("$aplazamientos", descanso.ConteoAplazamientos);
         cmd.Parameters.AddWithValue(
-            "$date", BaseDatosSqlite.DateKey(DateOnly.FromDateTime(br.ScheduledAt.LocalDateTime)));
+            "$fecha", BaseDatosSqlite.ClaveFecha(DateOnly.FromDateTime(descanso.ProgramadoEn.LocalDateTime)));
 
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Descanso>> GetByDateAsync(DateOnly date, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Descanso>> GetByDateAsync(DateOnly fecha, CancellationToken ct = default)
     {
-        await using SqliteConnection cn = db.Open();
+        await using SqliteConnection cn = bd.Abrir();
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            SELECT Id, Type, ScheduledAt, StartedAt, EndedAt, PlannedDurationSec, Outcome, SnoozeCount
-            FROM breaks WHERE DateKey=$date ORDER BY ScheduledAt
+            SELECT Id, Tipo, ProgramadoEn, IniciadoEn, FinalizadoEn, DuracionPlanificadaSeg, Resultado, ConteoAplazamientos
+            FROM descansos WHERE ClaveFecha=$fecha ORDER BY ProgramadoEn
             """;
 
-        cmd.Parameters.AddWithValue("$date", BaseDatosSqlite.DateKey(date));
+        cmd.Parameters.AddWithValue("$fecha", BaseDatosSqlite.ClaveFecha(fecha));
 
-        var list = new List<Descanso>();
-        await using SqliteDataReader r = await cmd.ExecuteReaderAsync(ct);
-        while (await r.ReadAsync(ct))
+        var lista = new List<Descanso>();
+        await using SqliteDataReader lector = await cmd.ExecuteReaderAsync(ct);
+        while (await lector.ReadAsync(ct))
         {
-            list.Add(new Descanso
+            lista.Add(new Descanso
             {
-                Id = Guid.Parse(r.GetString(0)),
-                Type = (TipoDescanso)r.GetInt32(1),
-                ScheduledAt = DateTimeOffset.Parse(r.GetString(2)),
-                StartedAt = BaseDatosSqlite.ParseIso(r.IsDBNull(3) ? null : r.GetString(3)),
-                EndedAt = BaseDatosSqlite.ParseIso(r.IsDBNull(4) ? null : r.GetString(4)),
-                PlannedDuration = TimeSpan.FromSeconds(r.GetDouble(5)),
-                Outcome = (ResultadoDescanso)r.GetInt32(6),
-                SnoozeCount = r.GetInt32(7)
+                Id = Guid.Parse(lector.GetString(0)),
+                Tipo = (TipoDescanso)lector.GetInt32(1),
+                ProgramadoEn = DateTimeOffset.Parse(lector.GetString(2)),
+                IniciadoEn = BaseDatosSqlite.LeerIso(lector.IsDBNull(3) ? null : lector.GetString(3)),
+                FinalizadoEn = BaseDatosSqlite.LeerIso(lector.IsDBNull(4) ? null : lector.GetString(4)),
+                DuracionPlanificada = TimeSpan.FromSeconds(lector.GetDouble(5)),
+                Resultado = (ResultadoDescanso)lector.GetInt32(6),
+                ConteoAplazamientos = lector.GetInt32(7)
             });
         }
 
-        return list;
+        return lista;
     }
 }

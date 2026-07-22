@@ -28,20 +28,20 @@ public sealed class ProveedorActividadSistemaWin32(
 
     public ActivitySnapshot Sample()
     {
-        EstadoActividad state = EstadoActividad.None;
+        EstadoActividad state = EstadoActividad.Ninguno;
 
         (string? proc, string? title, nint hwnd) = GetForegroundApp();
         TimeSpan idleTime = GetIdleTime();
 
         if (idleTime >= IdleThreshold)
         {
-            state |= EstadoActividad.Idle;
+            state |= EstadoActividad.Inactivo;
         }
 
         // Sin ventana en primer plano se asume sesión bloqueada.
         if (hwnd == nint.Zero)
         {
-            state |= EstadoActividad.SessionLocked;
+            state |= EstadoActividad.SesionBloqueada;
         }
 
         state |= QueryNotificationState(hwnd);
@@ -55,24 +55,24 @@ public sealed class ProveedorActividadSistemaWin32(
 
         if (_micInUse || _camInUse)
         {
-            state |= EstadoActividad.MicOrCameraInUse;
+            state |= EstadoActividad.MicOCamaraEnUso;
         }
 
         if (proc is not null)
         {
             if (ProcesosConocidos.Meetings.Contains(proc))
             {
-                state |= EstadoActividad.MicOrCameraInUse;
+                state |= EstadoActividad.MicOCamaraEnUso;
             }
 
             if (ProcesosConocidos.ScreenRecorders.Contains(proc))
             {
-                state |= EstadoActividad.ScreenRecording;
+                state |= EstadoActividad.GrabandoPantalla;
             }
 
             if (ProcesosConocidos.MediaPlayers.Contains(proc))
             {
-                state |= EstadoActividad.MediaPlaying;
+                state |= EstadoActividad.ReproduciendoMedios;
             }
         }
 
@@ -81,7 +81,7 @@ public sealed class ProveedorActividadSistemaWin32(
 
     private EstadoActividad QueryNotificationState(nint foreground)
     {
-        EstadoActividad state = EstadoActividad.None;
+        EstadoActividad state = EstadoActividad.Ninguno;
 
         if (MetodosNativos.SHQueryUserNotificationState(out var quns) == 0)
         {
@@ -89,11 +89,11 @@ public sealed class ProveedorActividadSistemaWin32(
             {
                 case MetodosNativos.QUERY_USER_NOTIFICATION_STATE.QUNS_RUNNING_D3D_FULL_SCREEN:
                 case MetodosNativos.QUERY_USER_NOTIFICATION_STATE.QUNS_PRESENTATION_MODE:
-                    state |= EstadoActividad.Fullscreen;
+                    state |= EstadoActividad.PantallaCompleta;
                     break;
 
                 case MetodosNativos.QUERY_USER_NOTIFICATION_STATE.QUNS_QUIET_TIME:
-                    state |= EstadoActividad.FocusAssist;
+                    state |= EstadoActividad.AsistenteConcentracion;
                     break;
             }
         }
@@ -101,7 +101,7 @@ public sealed class ProveedorActividadSistemaWin32(
         // Complemento: comparar el rect de la ventana con los bounds del monitor.
         if (foreground != nint.Zero && IsWindowFullscreen(foreground))
         {
-            state |= EstadoActividad.Fullscreen;
+            state |= EstadoActividad.PantallaCompleta;
         }
 
         return state;

@@ -42,13 +42,13 @@ public partial class VentanaNotificacion : Window
         Resolve(new NotificationResponse.TakeBreakNow());
 
     private void OnSnooze1(object s, RoutedEventArgs e) =>
-        Resolve(new NotificationResponse.Snooze(DuracionPausa.OneMinute));
+        Resolve(new NotificationResponse.Snooze(DuracionPausa.UnMinuto));
 
     private void OnSnooze5(object s, RoutedEventArgs e) =>
-        Resolve(new NotificationResponse.Snooze(DuracionPausa.FiveMinutes));
+        Resolve(new NotificationResponse.Snooze(DuracionPausa.CincoMinutos));
 
     private void OnSnooze15(object s, RoutedEventArgs e) =>
-        Resolve(new NotificationResponse.Snooze(DuracionPausa.FifteenMinutes));
+        Resolve(new NotificationResponse.Snooze(DuracionPausa.QuinceMinutos));
 
     private void OnSkip(object s, RoutedEventArgs e) =>
         Resolve(new NotificationResponse.Skip());

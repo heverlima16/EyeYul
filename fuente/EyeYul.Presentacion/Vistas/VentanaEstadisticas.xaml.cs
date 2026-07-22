@@ -9,6 +9,6 @@ public partial class VentanaEstadisticas : Window
     {
         InitializeComponent();
         DataContext = viewModel;
-        Loaded += async (_, _) => await viewModel.RefreshAsync();
+        Loaded += async (_, _) => await viewModel.RefrescarAsync();
     }
 }

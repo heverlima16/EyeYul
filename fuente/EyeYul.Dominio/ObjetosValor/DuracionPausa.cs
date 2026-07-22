@@ -2,20 +2,20 @@ namespace EyeYul.Dominio.ObjetosValor;
 
 public readonly record struct DuracionPausa
 {
-    public TimeSpan Value { get; }
+    public TimeSpan Valor { get; }
 
-    public static readonly DuracionPausa OneMinute = new(TimeSpan.FromMinutes(1));
+    public static readonly DuracionPausa UnMinuto = new(TimeSpan.FromMinutes(1));
 
-    public static readonly DuracionPausa FiveMinutes = new(TimeSpan.FromMinutes(5));
+    public static readonly DuracionPausa CincoMinutos = new(TimeSpan.FromMinutes(5));
 
-    public static readonly DuracionPausa FifteenMinutes = new(TimeSpan.FromMinutes(15));
+    public static readonly DuracionPausa QuinceMinutos = new(TimeSpan.FromMinutes(15));
 
-    private DuracionPausa(TimeSpan value)
+    private DuracionPausa(TimeSpan valor)
     {
-        Value = value;
+        Valor = valor;
     }
 
-    public static DuracionPausa FromMinutes(int minutes) => new(TimeSpan.FromMinutes(minutes));
+    public static DuracionPausa DesdeMinutos(int minutos) => new(TimeSpan.FromMinutes(minutos));
 
-    public override string ToString() => $"+{(int)Value.TotalMinutes}";
+    public override string ToString() => $"+{(int)Valor.TotalMinutes}";
 }

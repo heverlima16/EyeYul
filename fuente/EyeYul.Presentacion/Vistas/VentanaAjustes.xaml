@@ -4,6 +4,18 @@
         Title="EyeYul — Ajustes" Width="460" Height="640"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource CreamBrush}"
         FontFamily="Segoe UI" ResizeMode="CanMinimize">
+    <Window.Resources>
+        <!-- Campo para escribir un numero: se digita, no se arrastra. -->
+        <Style x:Key="CampoNumerico" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="90" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="MaxLength" Value="4" />
+            <!-- Marca el campo para que el filtro de pegado lo reconozca. -->
+            <Setter Property="Tag" Value="numerico" />
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -17,30 +29,45 @@
                        Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
             <StackPanel>
                 <TextBlock Text="PAUSAS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
 
-                <TextBlock Text="Intervalo entre pausas (minutos)" Foreground="{DynamicResource InkBrush}" />
-                <Slider Minimum="1" Maximum="120" Value="{Binding IntervalMinutes}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,4,0,2" />
-                <TextBlock Text="{Binding IntervalMinutes, StringFormat={}{0:0} min}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12" />
+                <TextBlock Text="Intervalo entre pausas" Foreground="{DynamicResource InkBrush}" />
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,14">
+                    <TextBox Style="{StaticResource CampoNumerico}"
+                             Text="{Binding IntervalMinutes, StringFormat={}{0:0}}"
+                             PreviewTextInput="SoloDigitos" />
+                    <TextBlock Text="minutos · entre 1 y 120" VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="{DynamicResource MutedBrush}" />
+                </StackPanel>
 
-                <TextBlock Text="Duración de la pausa (segundos)" Foreground="{DynamicResource InkBrush}" />
-                <Slider Minimum="5" Maximum="600" Value="{Binding DurationSeconds}" TickFrequency="5" IsSnapToTickEnabled="True" Margin="0,4,0,2" />
-                <TextBlock Text="{Binding DurationSeconds, StringFormat={}{0:0} s}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12" />
+                <TextBlock Text="Duración de la pausa" Foreground="{DynamicResource InkBrush}" />
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,14">
+                    <TextBox Style="{StaticResource CampoNumerico}"
+                             Text="{Binding DurationSeconds, StringFormat={}{0:0}}"
+                             PreviewTextInput="SoloDigitos" />
+                    <TextBlock Text="segundos · entre 5 y 600" VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="{DynamicResource MutedBrush}" />
+                </StackPanel>
 
                 <TextBlock Text="Mensaje de la pausa" Foreground="{DynamicResource InkBrush}" />
-                <TextBox Text="{Binding BreakMessage}" Margin="0,4,0,16" Padding="8" TextWrapping="Wrap" MinHeight="48" />
+                <TextBox Text="{Binding BreakMessage}" Margin="0,6,0,16" Padding="8" TextWrapping="Wrap" MinHeight="48" />
 
                 <TextBlock Text="PAUSA INTELIGENTE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
                 <CheckBox Content="Respetar el flujo (pausa inteligente)" IsChecked="{Binding SmartPauseEnabled}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
                 <CheckBox Content="No interrumpir en pantalla completa" IsChecked="{Binding RespectFullscreen}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
                 <CheckBox Content="No interrumpir en reuniones (mic/cámara)" IsChecked="{Binding RespectMeetings}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
-                <CheckBox Content="No interrumpir al reproducir video" IsChecked="{Binding RespectMedia}" Margin="0,4,0,12" Foreground="{DynamicResource InkBrush}" />
+                <CheckBox Content="No interrumpir al reproducir video" IsChecked="{Binding RespectMedia}" Margin="0,4,0,14" Foreground="{DynamicResource InkBrush}" />
 
                 <TextBlock Text="Máx. aplazamientos por día" Foreground="{DynamicResource InkBrush}" />
-                <Slider Minimum="0" Maximum="30" Value="{Binding MaxSnoozesPerDay}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,4,0,2" />
-                <TextBlock Text="{Binding MaxSnoozesPerDay, StringFormat={}{0} máx. · 0 sin límite}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12" />
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,14">
+                    <TextBox Style="{StaticResource CampoNumerico}"
+                             Text="{Binding MaxSnoozesPerDay}"
+                             PreviewTextInput="SoloDigitos" />
+                    <TextBlock Text="0 = sin límite" VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="{DynamicResource MutedBrush}" />
+                </StackPanel>
 
                 <TextBlock Text="GENERAL" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
                 <CheckBox Content="Iniciar con Windows" IsChecked="{Binding StartWithWindows}" Margin="0,4" Foreground="{DynamicResource InkBrush}" />
@@ -55,4 +82,3 @@
         </StackPanel>
     </Grid>
 </Window>
-

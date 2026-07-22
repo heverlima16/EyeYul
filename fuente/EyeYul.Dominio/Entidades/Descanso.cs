@@ -6,51 +6,51 @@ public sealed class Descanso
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
-    public TipoDescanso Type { get; init; }
+    public TipoDescanso Tipo { get; init; }
 
-    public DateTimeOffset ScheduledAt { get; init; }
+    public DateTimeOffset ProgramadoEn { get; init; }
 
-    public DateTimeOffset? StartedAt { get; set; }
+    public DateTimeOffset? IniciadoEn { get; set; }
 
-    public DateTimeOffset? EndedAt { get; set; }
+    public DateTimeOffset? FinalizadoEn { get; set; }
 
-    public TimeSpan PlannedDuration { get; init; }
+    public TimeSpan DuracionPlanificada { get; init; }
 
-    public ResultadoDescanso Outcome { get; set; } = ResultadoDescanso.Pending;
+    public ResultadoDescanso Resultado { get; set; } = ResultadoDescanso.Pendiente;
 
-    public int SnoozeCount { get; set; }
+    public int ConteoAplazamientos { get; set; }
 
-    public TimeSpan? ActualDuration =>
-        StartedAt is { } started && EndedAt is { } ended ? ended - started : null;
+    public TimeSpan? DuracionReal =>
+        IniciadoEn is { } inicio && FinalizadoEn is { } fin ? fin - inicio : null;
 
-    public bool WasRespected => Outcome == ResultadoDescanso.Completed;
+    public bool FueRespetado => Resultado == ResultadoDescanso.Completado;
 
-    public void MarkStarted(DateTimeOffset when)
+    public void MarcarIniciado(DateTimeOffset cuando)
     {
-        StartedAt = when;
-        Outcome = ResultadoDescanso.Pending;
+        IniciadoEn = cuando;
+        Resultado = ResultadoDescanso.Pendiente;
     }
 
-    public void MarkCompleted(DateTimeOffset when)
+    public void MarcarCompletado(DateTimeOffset cuando)
     {
-        EndedAt = when;
-        Outcome = ResultadoDescanso.Completed;
+        FinalizadoEn = cuando;
+        Resultado = ResultadoDescanso.Completado;
     }
 
-    public void MarkSkipped(DateTimeOffset when)
+    public void MarcarOmitido(DateTimeOffset cuando)
     {
-        EndedAt = when;
-        Outcome = ResultadoDescanso.Skipped;
+        FinalizadoEn = cuando;
+        Resultado = ResultadoDescanso.Omitido;
     }
 
-    public void MarkSuppressed()
+    public void MarcarSuprimido()
     {
-        Outcome = ResultadoDescanso.Suppressed;
+        Resultado = ResultadoDescanso.Suprimido;
     }
 
-    public void MarkSnoozed()
+    public void MarcarAplazado()
     {
-        SnoozeCount++;
-        Outcome = ResultadoDescanso.Snoozed;
+        ConteoAplazamientos++;
+        Resultado = ResultadoDescanso.Aplazado;
     }
 }

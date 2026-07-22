@@ -4,20 +4,20 @@ namespace EyeYul.Aplicacion.AplicacionReglas;
 
 public sealed class PoliticaPausa
 {
-    private DateOnly _currentDay;
+    private DateOnly _diaActual;
 
-    private int _snoozesToday;
+    private int _aplazamientosHoy;
 
-    public bool CanSnooze(DateOnly today, int snoozesOnThisBreak, EnforcementSettings settings)
+    public bool PuedeAplazar(DateOnly hoy, int aplazamientosDeEstaPausa, EnforcementSettings ajustes)
     {
-        RollDayIfNeeded(today);
+        CambiarDiaSiHaceFalta(hoy);
 
-        if (settings.MaxSnoozesPerDay > 0 && _snoozesToday >= settings.MaxSnoozesPerDay)
+        if (ajustes.MaxSnoozesPerDay > 0 && _aplazamientosHoy >= ajustes.MaxSnoozesPerDay)
         {
             return false;
         }
 
-        if (settings.MaxSnoozesPerBreak > 0 && snoozesOnThisBreak >= settings.MaxSnoozesPerBreak)
+        if (ajustes.MaxSnoozesPerBreak > 0 && aplazamientosDeEstaPausa >= ajustes.MaxSnoozesPerBreak)
         {
             return false;
         }
@@ -25,24 +25,24 @@ public sealed class PoliticaPausa
         return true;
     }
 
-    public void RecordSnooze(DateOnly today)
+    public void RegistrarAplazamiento(DateOnly hoy)
     {
-        RollDayIfNeeded(today);
-        _snoozesToday++;
+        CambiarDiaSiHaceFalta(hoy);
+        _aplazamientosHoy++;
     }
 
-    public int SnoozesUsedToday(DateOnly today)
+    public int AplazamientosUsadosHoy(DateOnly hoy)
     {
-        RollDayIfNeeded(today);
-        return _snoozesToday;
+        CambiarDiaSiHaceFalta(hoy);
+        return _aplazamientosHoy;
     }
 
-    private void RollDayIfNeeded(DateOnly today)
+    private void CambiarDiaSiHaceFalta(DateOnly hoy)
     {
-        if (today != _currentDay)
+        if (hoy != _diaActual)
         {
-            _currentDay = today;
-            _snoozesToday = 0;
+            _diaActual = hoy;
+            _aplazamientosHoy = 0;
         }
     }
 }

@@ -6,45 +6,45 @@ using Microsoft.Extensions.Logging;
 namespace EyeYul.Aplicacion.Puntuacion;
 
 public sealed class ServicioPuntajeVisual(
-    IScreenScoreRepository repository,
-    IReloj clock,
-    ILogger<ServicioPuntajeVisual> logger)
+    IScreenScoreRepository repositorio,
+    IReloj reloj,
+    ILogger<ServicioPuntajeVisual> registro)
 {
-    public async Task<int> RegisterBreakTakenAsync(CancellationToken ct = default)
+    public async Task<int> RegistrarDescansoTomadoAsync(CancellationToken ct = default)
     {
-        PuntajeVisualDiario day = await repository.GetOrCreateAsync(clock.Today, ct);
-        day.BreaksTaken++;
-        return await RecalcAndSaveAsync(day, ct);
+        PuntajeVisualDiario dia = await repositorio.GetOrCreateAsync(reloj.Today, ct);
+        dia.DescansosTomados++;
+        return await RecalcularYGuardarAsync(dia, ct);
     }
 
-    public async Task<int> RegisterBreakSkippedAsync(CancellationToken ct = default)
+    public async Task<int> RegistrarDescansoOmitidoAsync(CancellationToken ct = default)
     {
-        PuntajeVisualDiario day = await repository.GetOrCreateAsync(clock.Today, ct);
-        day.BreaksSkipped++;
-        return await RecalcAndSaveAsync(day, ct);
+        PuntajeVisualDiario dia = await repositorio.GetOrCreateAsync(reloj.Today, ct);
+        dia.DescansosOmitidos++;
+        return await RecalcularYGuardarAsync(dia, ct);
     }
 
-    public async Task<int> UpdateStretchAsync(TimeSpan stretch, CancellationToken ct = default)
+    public async Task<int> ActualizarRachaAsync(TimeSpan racha, CancellationToken ct = default)
     {
-        PuntajeVisualDiario day = await repository.GetOrCreateAsync(clock.Today, ct);
-        if (stretch > day.LongestStretch)
+        PuntajeVisualDiario dia = await repositorio.GetOrCreateAsync(reloj.Today, ct);
+        if (racha > dia.RachaMasLarga)
         {
-            day.LongestStretch = stretch;
+            dia.RachaMasLarga = racha;
         }
 
-        return await RecalcAndSaveAsync(day, ct);
+        return await RecalcularYGuardarAsync(dia, ct);
     }
 
-    public async Task<int> GetTodayScoreAsync(CancellationToken ct = default) =>
-        ScreenScoreRules.Calculate(await repository.GetOrCreateAsync(clock.Today, ct));
+    public async Task<int> ObtenerPuntajeDeHoyAsync(CancellationToken ct = default) =>
+        ReglasPuntajeVisual.Calcular(await repositorio.GetOrCreateAsync(reloj.Today, ct));
 
-    private async Task<int> RecalcAndSaveAsync(PuntajeVisualDiario day, CancellationToken ct)
+    private async Task<int> RecalcularYGuardarAsync(PuntajeVisualDiario dia, CancellationToken ct)
     {
-        day.Score = ScreenScoreRules.Calculate(day);
-        await repository.SaveAsync(day, ct);
-        logger.LogDebug(
-            "Screen Score de {Date} = {Score} ({Grade})",
-            day.Date, day.Score, ScreenScoreRules.Grade(day.Score));
-        return day.Score;
+        dia.Puntaje = ReglasPuntajeVisual.Calcular(dia);
+        await repositorio.SaveAsync(dia, ct);
+        registro.LogDebug(
+            "Screen Score de {Fecha} = {Puntaje} ({Calificacion})",
+            dia.Fecha, dia.Puntaje, ReglasPuntajeVisual.Calificacion(dia.Puntaje));
+        return dia.Puntaje;
     }
 }

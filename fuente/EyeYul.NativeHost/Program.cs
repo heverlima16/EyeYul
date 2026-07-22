@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 const int MaxPayloadBytes = 1024 * 1024;
 
 var db = new BaseDatosSqlite(NullLogger<BaseDatosSqlite>.Instance);
-var repo = new WebsiteUsageRepository(db);
+var repo = new RepositorioUsoSitioWeb(db);
 
 using Stream stdin = Console.OpenStandardInput();
 
