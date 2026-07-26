@@ -15,14 +15,27 @@
 .PARAMETER Destino
     Carpeta de salida. Por defecto: .\publicacion
 
+.PARAMETER CertificadoPfx
+    Ruta a un certificado de firma de código (.pfx). Si se indica, firma el
+    .exe resultante con signtool y evita el aviso de SmartScreen "Windows
+    protegio tu PC" al ejecutarlo en otra maquina. Sin este parametro no se
+    firma nada (comportamiento actual): hoy no hay certificado comprado.
+
+.PARAMETER PasswordCertificado
+    Contrasena del .pfx indicado en -CertificadoPfx. Se pide de forma
+    interactiva si se omite y el certificado la requiere.
+
 .EXAMPLE
     .\publicar.ps1
     .\publicar.ps1 -Autocontenido
+    .\publicar.ps1 -Autocontenido -CertificadoPfx C:\ruta\cert.pfx
 #>
 [CmdletBinding()]
 param(
     [switch]$Autocontenido,
-    [string]$Destino = "publicacion"
+    [string]$Destino = "publicacion",
+    [string]$CertificadoPfx,
+    [securestring]$PasswordCertificado
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,6 +70,25 @@ if ($LASTEXITCODE -ne 0) { throw "La publicacion fallo." }
 
 $exe = Join-Path $Destino "EyeYul.exe"
 if (-not (Test-Path $exe)) { throw "No se genero EyeYul.exe" }
+
+if ($CertificadoPfx) {
+    if (-not (Test-Path $CertificadoPfx)) { throw "No se encontro el certificado: $CertificadoPfx" }
+
+    $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1 -ExpandProperty FullName
+    if (-not $signtool) { throw "No se encontro signtool.exe (viene con el Windows SDK)." }
+
+    $args = @("sign", "/fd", "SHA256", "/tr", "http://timestamp.digicert.com", "/td", "SHA256", "/f", $CertificadoPfx)
+    if ($PasswordCertificado) {
+        $args += @("/p", [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($PasswordCertificado)))
+    }
+    $args += $exe
+
+    Write-Host "Firmando $exe..." -ForegroundColor Cyan
+    & $signtool @args
+    if ($LASTEXITCODE -ne 0) { throw "La firma con signtool fallo." }
+    Write-Host "Firmado correctamente." -ForegroundColor Green
+}
 
 $mb = [math]::Round((Get-Item $exe).Length / 1MB, 1)
 $sueltos = (Get-ChildItem $Destino -File | Where-Object { $_.Name -ne "EyeYul.exe" }).Count

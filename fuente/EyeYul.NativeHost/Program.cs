@@ -13,18 +13,18 @@ var repo = new RepositorioUsoSitioWeb(db);
 
 using Stream stdin = Console.OpenStandardInput();
 
-byte[] lengthBuffer = new byte[4];
+byte[] bufferLongitud = new byte[4];
 
-while (ReadExact(stdin, lengthBuffer, 4))
+while (LeerExacto(stdin, bufferLongitud, 4))
 {
-    int length = BinaryPrimitives.ReadInt32LittleEndian(lengthBuffer);
-    if (length <= 0 || length > MaxPayloadBytes)
+    int longitud = BinaryPrimitives.ReadInt32LittleEndian(bufferLongitud);
+    if (longitud <= 0 || longitud > MaxPayloadBytes)
     {
         break;
     }
 
-    byte[] payload = new byte[length];
-    if (!ReadExact(stdin, payload, length))
+    byte[] payload = new byte[longitud];
+    if (!LeerExacto(stdin, payload, longitud))
     {
         break;
     }
@@ -47,17 +47,17 @@ while (ReadExact(stdin, lengthBuffer, 4))
     }
 }
 
-static bool ReadExact(Stream stream, byte[] buffer, int count)
+static bool LeerExacto(Stream flujo, byte[] buffer, int cantidad)
 {
-    for (int read = 0; read < count;)
+    for (int leido = 0; leido < cantidad;)
     {
-        int n = stream.Read(buffer, read, count - read);
+        int n = flujo.Read(buffer, leido, cantidad - leido);
         if (n == 0)
         {
             return false;
         }
 
-        read += n;
+        leido += n;
     }
 
     return true;

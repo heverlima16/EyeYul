@@ -75,11 +75,11 @@ public sealed class ControladorIconoBandeja(
         return menu;
     }
 
-    private static MenuItem MenuItem(string header, Action onClick)
+    private static MenuItem MenuItem(string titulo, Action alHacerClic)
     {
-        var item = new MenuItem { Header = header };
-        item.Click += (_, _) => onClick();
-        return item;
+        var elemento = new MenuItem { Header = titulo };
+        elemento.Click += (_, _) => alHacerClic();
+        return elemento;
     }
 
     private void OnTick(object? sender, TimeSpan remaining)

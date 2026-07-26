@@ -75,4 +75,5 @@
     <StreamGeometry x:Key="IcoVideo">M4,6L14,6A2,2,0,0,1,16,8L16,16A2,2,0,0,1,14,18L4,18A2,2,0,0,1,2,16L2,8A2,2,0,0,1,4,6z M22,8L16,12 22,16z</StreamGeometry>
     <StreamGeometry x:Key="IcoShieldAlert">M12,3L19,6 19,12C19,16.5 16,19.5 12,21 8,19.5 5,16.5 5,12L5,6z M12,8L12,12 M12,16L12.01,16</StreamGeometry>
     <StreamGeometry x:Key="IcoHourglass">M5,3L19,3 M5,21L19,21 M6,3C6,9 11,10 12,12 11,14 6,15 6,21 M18,3C18,9 13,10 12,12 13,14 18,15 18,21</StreamGeometry>
+    <StreamGeometry x:Key="IcoDroplet">M12,2.7C12,2.7 18,10.5 18,15A6,6,0,1,1,6,15C6,10.5 12,2.7 12,2.7z</StreamGeometry>
 </ResourceDictionary>

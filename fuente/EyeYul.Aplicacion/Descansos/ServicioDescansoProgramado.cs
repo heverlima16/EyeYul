@@ -56,7 +56,7 @@ public sealed class ServicioDescansoProgramado(IPlannedBreakRepository repositor
 
         foreach (DescansoProgramado pausa in await ObtenerTodosAsync(ct))
         {
-            if (!pausa.OcurreEn(ahora.DayOfWeek))
+            if (!pausa.OcurreEn(DateOnly.FromDateTime(ahora.Date)))
             {
                 continue;
             }

@@ -1,6 +1,7 @@
 using System.Windows;
 using EyeYul.Aplicacion;
 using EyeYul.Aplicacion.Abstracciones;
+using EyeYul.Aplicacion.Licencias;
 using EyeYul.Infraestructura;
 using EyeYul.Presentacion.Bandeja;
 using EyeYul.Presentacion.CapaSuperpuesta;
@@ -35,6 +36,7 @@ public partial class App : Application
                 services.AddEyeYulApplication();
 
                 services.AddSingleton<IControladorPantallaDescanso, ControladorPantallaDescansoWpf>();
+                services.AddSingleton<IControladorAccionSaludable, ControladorAccionSaludableWpf>();
                 services.AddSingleton<IServicioNotificacion, WpfNotificationService>();
                 services.AddSingleton<ControladorIconoBandeja>();
 
@@ -49,6 +51,8 @@ public partial class App : Application
         IAlmacenAjustes settingsStore = Services.GetRequiredService<IAlmacenAjustes>();
         await settingsStore.LoadAsync();
         ApplyStartupPreference(settingsStore);
+
+        await Services.GetRequiredService<ServicioLicencia>().CargarAsync();
 
         await _host.StartAsync();
 

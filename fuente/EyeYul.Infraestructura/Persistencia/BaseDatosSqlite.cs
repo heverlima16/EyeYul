@@ -44,6 +44,7 @@ public sealed class BaseDatosSqlite
         // y el historial viejo huerfano.
         MigrarEsquemaIngles(cn, registro);
         CrearEsquema(cn);
+        AgregarColumnasRecurrencia(cn);
     }
 
     private static void CrearEsquema(SqliteConnection cn) => Ejecutar(cn, """
@@ -102,7 +103,10 @@ public sealed class BaseDatosSqlite
             Dias TEXT NOT NULL,
             DuracionSeg REAL NOT NULL,
             Habilitado INTEGER NOT NULL,
-            CuentaTiempoAusente INTEGER NOT NULL
+            CuentaTiempoAusente INTEGER NOT NULL,
+            Recurrencia INTEGER NOT NULL DEFAULT 1,
+            DiaDelMes INTEGER NOT NULL DEFAULT 1,
+            FechaUnica TEXT NULL
         );
         """);
 
@@ -188,6 +192,27 @@ public sealed class BaseDatosSqlite
 
         // Los indices sobreviven al renombre de la tabla conservando su nombre viejo.
         Ejecutar(cn, "DROP INDEX IF EXISTS ix_breaks_date; DROP INDEX IF EXISTS ix_sessions_date;");
+    }
+
+    // Agregado 2026-07-25 junto con el calendario de recurrencia de la Agenda.
+    // CREATE TABLE IF NOT EXISTS no agrega columnas a una tabla ya existente:
+    // en una BD de antes de este cambio, descansos_programados no las tiene.
+    private static void AgregarColumnasRecurrencia(SqliteConnection cn)
+    {
+        if (!ExisteColumna(cn, "descansos_programados", "Recurrencia"))
+        {
+            Ejecutar(cn, "ALTER TABLE descansos_programados ADD COLUMN Recurrencia INTEGER NOT NULL DEFAULT 1;");
+        }
+
+        if (!ExisteColumna(cn, "descansos_programados", "DiaDelMes"))
+        {
+            Ejecutar(cn, "ALTER TABLE descansos_programados ADD COLUMN DiaDelMes INTEGER NOT NULL DEFAULT 1;");
+        }
+
+        if (!ExisteColumna(cn, "descansos_programados", "FechaUnica"))
+        {
+            Ejecutar(cn, "ALTER TABLE descansos_programados ADD COLUMN FechaUnica TEXT NULL;");
+        }
     }
 
     private static bool ExisteTabla(SqliteConnection cn, string nombre)

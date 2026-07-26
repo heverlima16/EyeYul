@@ -15,9 +15,9 @@ public sealed class ProveedorActividadSistemaWin32(
 
     private DateTime _lastDeviceCheck = DateTime.MinValue;
 
-    private bool _micInUse;
+    private bool _microfonoEnUso;
 
-    private bool _camInUse;
+    private bool _camaraEnUso;
 
     // Caché de la última ventana en primer plano: resolver el proceso es costoso.
     private nint _hwndAnterior;
@@ -30,8 +30,8 @@ public sealed class ProveedorActividadSistemaWin32(
     {
         EstadoActividad state = EstadoActividad.Ninguno;
 
-        (string? proc, string? title, nint hwnd) = GetForegroundApp();
-        TimeSpan idleTime = GetIdleTime();
+        (string? proceso, string? titulo, nint hwnd) = ObtenerAppPrimerPlano();
+        TimeSpan idleTime = ObtenerTiempoInactivo();
 
         if (idleTime >= IdleThreshold)
         {
@@ -44,48 +44,48 @@ public sealed class ProveedorActividadSistemaWin32(
             state |= EstadoActividad.SesionBloqueada;
         }
 
-        state |= QueryNotificationState(hwnd);
+        state |= ConsultarEstadoNotificacion(hwnd);
 
         if (DateTime.UtcNow - _lastDeviceCheck > DeviceCheckInterval)
         {
-            _micInUse = LectorAccesoCapacidades.IsMicrophoneInUse();
-            _camInUse = LectorAccesoCapacidades.IsCameraInUse();
+            _microfonoEnUso = LectorAccesoCapacidades.EstaMicrofonoEnUso();
+            _camaraEnUso = LectorAccesoCapacidades.EstaCamaraEnUso();
             _lastDeviceCheck = DateTime.UtcNow;
         }
 
-        if (_micInUse || _camInUse)
+        if (_microfonoEnUso || _camaraEnUso)
         {
             state |= EstadoActividad.MicOCamaraEnUso;
         }
 
-        if (proc is not null)
+        if (proceso is not null)
         {
-            if (ProcesosConocidos.Meetings.Contains(proc))
+            if (ProcesosConocidos.Meetings.Contains(proceso))
             {
                 state |= EstadoActividad.MicOCamaraEnUso;
             }
 
-            if (ProcesosConocidos.ScreenRecorders.Contains(proc))
+            if (ProcesosConocidos.ScreenRecorders.Contains(proceso))
             {
                 state |= EstadoActividad.GrabandoPantalla;
             }
 
-            if (ProcesosConocidos.MediaPlayers.Contains(proc))
+            if (ProcesosConocidos.MediaPlayers.Contains(proceso))
             {
                 state |= EstadoActividad.ReproduciendoMedios;
             }
         }
 
-        return new ActivitySnapshot(state, proc, title, idleTime);
+        return new ActivitySnapshot(state, proceso, titulo, idleTime);
     }
 
-    private EstadoActividad QueryNotificationState(nint foreground)
+    private EstadoActividad ConsultarEstadoNotificacion(nint primerPlano)
     {
         EstadoActividad state = EstadoActividad.Ninguno;
 
-        if (MetodosNativos.SHQueryUserNotificationState(out var quns) == 0)
+        if (MetodosNativos.SHQueryUserNotificationState(out var estadoNotificacion) == 0)
         {
-            switch (quns)
+            switch (estadoNotificacion)
             {
                 case MetodosNativos.QUERY_USER_NOTIFICATION_STATE.QUNS_RUNNING_D3D_FULL_SCREEN:
                 case MetodosNativos.QUERY_USER_NOTIFICATION_STATE.QUNS_PRESENTATION_MODE:
@@ -99,7 +99,7 @@ public sealed class ProveedorActividadSistemaWin32(
         }
 
         // Complemento: comparar el rect de la ventana con los bounds del monitor.
-        if (foreground != nint.Zero && IsWindowFullscreen(foreground))
+        if (primerPlano != nint.Zero && EsVentanaPantallaCompleta(primerPlano))
         {
             state |= EstadoActividad.PantallaCompleta;
         }
@@ -107,9 +107,9 @@ public sealed class ProveedorActividadSistemaWin32(
         return state;
     }
 
-    private static bool IsWindowFullscreen(nint hwnd)
+    private static bool EsVentanaPantallaCompleta(nint hwnd)
     {
-        if (!MetodosNativos.GetWindowRect(hwnd, out MetodosNativos.RECT windowRect))
+        if (!MetodosNativos.GetWindowRect(hwnd, out MetodosNativos.RECT rectVentana))
         {
             return false;
         }
@@ -126,14 +126,14 @@ public sealed class ProveedorActividadSistemaWin32(
             return false;
         }
 
-        MetodosNativos.RECT monitor = monitorInfo.rcMonitor;
-        return windowRect.Left <= monitor.Left
-               && windowRect.Top <= monitor.Top
-               && windowRect.Right >= monitor.Right
-               && windowRect.Bottom >= monitor.Bottom;
+        MetodosNativos.RECT rectMonitor = monitorInfo.rcMonitor;
+        return rectVentana.Left <= rectMonitor.Left
+               && rectVentana.Top <= rectMonitor.Top
+               && rectVentana.Right >= rectMonitor.Right
+               && rectVentana.Bottom >= rectMonitor.Bottom;
     }
 
-    private (string? Proc, string? Title, nint Hwnd) GetForegroundApp()
+    private (string? Proceso, string? Titulo, nint Hwnd) ObtenerAppPrimerPlano()
     {
         nint hwnd = MetodosNativos.GetForegroundWindow();
         if (hwnd == nint.Zero)
@@ -149,29 +149,29 @@ public sealed class ProveedorActividadSistemaWin32(
                 return (null, null, hwnd);
             }
 
-            string? title = null;
-            int titleLength = MetodosNativos.GetWindowTextLength(hwnd);
-            if (titleLength > 0)
+            string? titulo = null;
+            int longitudTitulo = MetodosNativos.GetWindowTextLength(hwnd);
+            if (longitudTitulo > 0)
             {
-                var buffer = new StringBuilder(titleLength + 1);
+                var buffer = new StringBuilder(longitudTitulo + 1);
                 MetodosNativos.GetWindowText(hwnd, buffer, buffer.Capacity);
-                title = buffer.ToString();
+                titulo = buffer.ToString();
             }
 
-            string? procName;
+            string? nombreProceso;
             if (hwnd == _hwndAnterior && pid == _pidAnterior)
             {
-                procName = _nombreProcesoAnterior;
+                nombreProceso = _nombreProcesoAnterior;
             }
             else
             {
-                procName = ResolverNombreProceso(pid);
+                nombreProceso = ResolverNombreProceso(pid);
                 _hwndAnterior = hwnd;
                 _pidAnterior = pid;
-                _nombreProcesoAnterior = procName;
+                _nombreProcesoAnterior = nombreProceso;
             }
 
-            return (procName, string.IsNullOrWhiteSpace(title) ? null : title, hwnd);
+            return (nombreProceso, string.IsNullOrWhiteSpace(titulo) ? null : titulo, hwnd);
         }
         catch (Exception ex)
         {
@@ -192,10 +192,10 @@ public sealed class ProveedorActividadSistemaWin32(
 
         try
         {
-            uint size = 1024u;
-            var buffer = new StringBuilder((int)size);
+            uint tamano = 1024u;
+            var buffer = new StringBuilder((int)tamano);
 
-            return MetodosNativos.QueryFullProcessImageName(handle, 0u, buffer, ref size)
+            return MetodosNativos.QueryFullProcessImageName(handle, 0u, buffer, ref tamano)
                 ? Path.GetFileNameWithoutExtension(buffer.ToString())
                 : null;
         }
@@ -205,7 +205,7 @@ public sealed class ProveedorActividadSistemaWin32(
         }
     }
 
-    private static TimeSpan GetIdleTime()
+    private static TimeSpan ObtenerTiempoInactivo()
     {
         var info = new MetodosNativos.LASTINPUTINFO
         {
@@ -217,7 +217,7 @@ public sealed class ProveedorActividadSistemaWin32(
             return TimeSpan.Zero;
         }
 
-        uint elapsed = MetodosNativos.GetTickCount() - info.dwTime;
-        return TimeSpan.FromMilliseconds(elapsed);
+        uint transcurrido = MetodosNativos.GetTickCount() - info.dwTime;
+        return TimeSpan.FromMilliseconds(transcurrido);
     }
 }

@@ -45,6 +45,42 @@ public sealed partial class AjustesModelo : ObservableObject
     [ObservableProperty]
     private string _statusMessage = string.Empty;
 
+    public static IReadOnlyList<string> IntervalosDisponibles { get; } =
+        new[] { 5, 10, 15, 20, 25, 30, 45, 60, 90, 120 }.Select(m => m.ToString()).ToList();
+
+    public static IReadOnlyList<string> DuracionesDisponibles { get; } =
+        new[] { 10, 15, 20, 30, 45, 60, 90, 120 }.Select(s => s.ToString()).ToList();
+
+    /// <summary>Espejo en texto de <see cref="IntervalMinutes"/> para el selector editable.</summary>
+    public string IntervalMinutesText
+    {
+        get => ((int)IntervalMinutes).ToString();
+        set
+        {
+            if (int.TryParse(value, out int minutos))
+            {
+                IntervalMinutes = minutos;
+            }
+        }
+    }
+
+    /// <summary>Espejo en texto de <see cref="DurationSeconds"/> para el selector editable.</summary>
+    public string DurationSecondsText
+    {
+        get => ((int)DurationSeconds).ToString();
+        set
+        {
+            if (int.TryParse(value, out int segundos))
+            {
+                DurationSeconds = segundos;
+            }
+        }
+    }
+
+    partial void OnIntervalMinutesChanged(double value) => OnPropertyChanged(nameof(IntervalMinutesText));
+
+    partial void OnDurationSecondsChanged(double value) => OnPropertyChanged(nameof(DurationSecondsText));
+
     public AjustesModelo(IAlmacenAjustes store)
     {
         _store = store;

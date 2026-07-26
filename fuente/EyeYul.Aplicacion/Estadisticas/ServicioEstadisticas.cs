@@ -9,6 +9,10 @@ public sealed class ServicioEstadisticas(
     IWebsiteUsageRepository repoSitios,
     ISessionRepository repoSesiones)
 {
+    public Task<IReadOnlyList<PuntajeVisualDiario>> ObtenerRangoPuntajeAsync(
+        DateOnly desde, DateOnly hasta, CancellationToken ct = default) =>
+        repoPuntaje.GetRangeAsync(desde, hasta, ct);
+
     public async Task<ResumenDiario> ObtenerResumenDiarioAsync(
         DateOnly fecha, int primeros = 5, CancellationToken ct = default)
     {

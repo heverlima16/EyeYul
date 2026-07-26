@@ -21,3 +21,6 @@
 
 # Salida de publicar.ps1
 publicacion/
+
+# Salida de EyeYul.iss (instalador compilado con Inno Setup)
+instalador/

@@ -15,6 +15,9 @@ public partial class VentanaPrincipal : Window
         IsVisibleChanged += (_, _) => viewModel.ActualizacionesEnVivo = IsVisible;
     }
 
+    // El WindowChrome (CaptionHeight) ya cubre la franja superior de 32px con los botones
+    // de minimizar/maximizar/cerrar; esta franja arrastra el resto de encabezados (sidebar
+    // y contenido) que quedan fuera de esa franja nativa.
     private void OnDragMove(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left)

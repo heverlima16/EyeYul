@@ -2,6 +2,7 @@ using EyeYul.Aplicacion.Abstracciones;
 using EyeYul.Aplicacion.Actividad;
 using EyeYul.Aplicacion.AplicacionReglas;
 using EyeYul.Aplicacion.Configuracion;
+using EyeYul.Aplicacion.Licencias;
 using EyeYul.Aplicacion.Puntuacion;
 using EyeYul.Dominio.Entidades;
 using EyeYul.Dominio.Enumeraciones;
@@ -21,6 +22,7 @@ public sealed class ProgramadorDescansos(
     PoliticaPausa politicaAplazamiento,
     ServicioDescansoProgramado descansosProgramados,
     IAutomationRunner automatizacion,
+    ServicioLicencia licencia,
     IReloj reloj,
     ILogger<ProgramadorDescansos> registro) : BackgroundService
 {
@@ -96,7 +98,10 @@ public sealed class ProgramadorDescansos(
             return;
         }
 
-        DescansoProgramado? programado = await descansosProgramados.ObtenerPendienteAsync(TimeSpan.FromSeconds(30), ct);
+        // Pausas planificadas (Agenda): función Premium.
+        DescansoProgramado? programado = licencia.PremiumDisponible
+            ? await descansosProgramados.ObtenerPendienteAsync(TimeSpan.FromSeconds(30), ct)
+            : null;
         bool tocaPorIntervalo = _acumulado >= intervalo;
 
         if (_forzarPausa || programado is not null || tocaPorIntervalo)
@@ -214,16 +219,24 @@ public sealed class ProgramadorDescansos(
     private async Task EjecutarPausaAsync(
         Descanso descanso, TimeSpan duracion, AjustesEyeYul ajustes, CancellationToken ct)
     {
-        await automatizacion.RunAsync(ajustes.General.OnBreakStartCommand, ct);
+        bool premium = licencia.PremiumDisponible;
+
+        // Automatizaciones (comando al iniciar/terminar pausa): función Premium.
+        if (premium)
+        {
+            await automatizacion.RunAsync(ajustes.General.OnBreakStartCommand, ct);
+        }
+
         descanso.MarcarIniciado(reloj.Now);
         UltimaSupresion = null;
 
         var solicitud = new BreakOverlayRequest(
             descanso,
-            ElegirMensajeDePausa(ajustes),
+            ElegirMensajeDePausa(ajustes, premium),
             duracion,
             ajustes.Descansos.AllowSkip && !ajustes.AplicacionReglas.StrictMode,
-            ajustes.Appearance.OverlayBackgroundPath);
+            // Fondo de overlay personalizado: función Premium.
+            premium ? ajustes.Appearance.OverlayBackgroundPath : null);
 
         switch (await pantallaDescanso.ShowAsync(solicitud, ct))
         {
@@ -244,17 +257,26 @@ public sealed class ProgramadorDescansos(
         }
 
         await repositorioDescansos.AddAsync(descanso, ct);
-        await automatizacion.RunAsync(ajustes.General.OnBreakEndCommand, ct);
+
+        if (premium)
+        {
+            await automatizacion.RunAsync(ajustes.General.OnBreakEndCommand, ct);
+        }
+
         await puntajeVisual.ActualizarRachaAsync(_rachaActual, ct);
         _acumulado = TimeSpan.Zero;
     }
 
-    private static string ElegirMensajeDePausa(AjustesEyeYul ajustes)
+    private static string ElegirMensajeDePausa(AjustesEyeYul ajustes, bool premium)
     {
-        List<string> mensajes = ajustes.Appearance.CustomMessages;
-        return mensajes.Count == 0
+        // Elegir cuáles frases de fábrica usar es gratis; crear frases propias es Premium.
+        List<FraseBienestar> disponibles = ajustes.Appearance.Frases
+            .Where(f => f.Habilitada && (premium || f.EsPredefinida))
+            .ToList();
+
+        return disponibles.Count == 0
             ? ajustes.Appearance.BreakMessage
-            : mensajes[Random.Shared.Next(mensajes.Count)];
+            : disponibles[Random.Shared.Next(disponibles.Count)].Texto;
     }
 
     private async Task OmitirAsync(Descanso descanso, CancellationToken ct)

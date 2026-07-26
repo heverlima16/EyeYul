@@ -45,10 +45,69 @@ public class PlannedBreakTests
     [Fact]
     public void OccursOn_RespectsEnabledAndDays()
     {
+        // 2026-07-10 es viernes, 2026-07-11 es sabado.
         var pb = new DescansoProgramado { Habilitado = true };
         pb.Dias.Add(DayOfWeek.Friday);
 
-        Assert.True(pb.OcurreEn(DayOfWeek.Friday));
-        Assert.False(pb.OcurreEn(DayOfWeek.Saturday));
+        Assert.True(pb.OcurreEn(new DateOnly(2026, 7, 10)));
+        Assert.False(pb.OcurreEn(new DateOnly(2026, 7, 11)));
+    }
+
+    [Fact]
+    public void Diario_OcurreCualquierDia()
+    {
+        var pb = new DescansoProgramado { Habilitado = true, Recurrencia = TipoRecurrencia.Diario };
+
+        Assert.True(pb.OcurreEn(new DateOnly(2026, 7, 10)));
+        Assert.True(pb.OcurreEn(new DateOnly(2026, 7, 11)));
+    }
+
+    [Fact]
+    public void Mensual_OcurreSoloEnElDiaDelMes()
+    {
+        var pb = new DescansoProgramado { Habilitado = true, Recurrencia = TipoRecurrencia.Mensual, DiaDelMes = 15 };
+
+        Assert.True(pb.OcurreEn(new DateOnly(2026, 7, 15)));
+        Assert.False(pb.OcurreEn(new DateOnly(2026, 7, 14)));
+    }
+
+    [Fact]
+    public void Mensual_DiaFueraDeRango_CaeEnElUltimoDiaDelMes()
+    {
+        // Febrero 2026 (no bisiesto) tiene 28 dias: dia 31 debe caer el 28.
+        var pb = new DescansoProgramado { Habilitado = true, Recurrencia = TipoRecurrencia.Mensual, DiaDelMes = 31 };
+
+        Assert.True(pb.OcurreEn(new DateOnly(2026, 2, 28)));
+    }
+
+    [Fact]
+    public void UnaVez_OcurreSoloEsaFecha()
+    {
+        var pb = new DescansoProgramado
+        {
+            Habilitado = true,
+            Recurrencia = TipoRecurrencia.UnaVez,
+            FechaUnica = new DateOnly(2026, 8, 1)
+        };
+
+        Assert.True(pb.OcurreEn(new DateOnly(2026, 8, 1)));
+        Assert.False(pb.OcurreEn(new DateOnly(2026, 8, 2)));
+    }
+
+    [Fact]
+    public void UnaVez_ProximaOcurrencia_NoRepiteDespuesDePasada()
+    {
+        var pb = new DescansoProgramado
+        {
+            HoraDelDia = new TimeOnly(9, 0),
+            Habilitado = true,
+            Recurrencia = TipoRecurrencia.UnaVez,
+            FechaUnica = new DateOnly(2026, 7, 6)
+        };
+
+        // 2026-07-06 9:00 ya paso (estamos a las 10:00 del mismo dia).
+        var from = new DateTimeOffset(2026, 7, 6, 10, 0, 0, TimeSpan.Zero);
+
+        Assert.Null(pb.ProximaOcurrencia(from));
     }
 }

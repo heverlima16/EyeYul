@@ -1,4 +1,5 @@
 using System.Windows;
+using EyeYul.Presentacion.Interoperabilidad;
 
 namespace EyeYul.Presentacion.Vistas;
 
@@ -9,6 +10,7 @@ public partial class VentanaPantallaDescanso : Window
     public VentanaPantallaDescanso()
     {
         InitializeComponent();
+        Loaded += (_, _) => DesenfoqueVentana.Habilitar(this, 0x59000000);
     }
 
     public void SetMessage(string message) => MessageText.Text = message;

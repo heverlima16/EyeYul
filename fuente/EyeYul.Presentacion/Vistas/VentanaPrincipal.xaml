@@ -4,10 +4,21 @@
         xmlns:app="clr-namespace:EyeYul.Presentacion"
         xmlns:c="clr-namespace:EyeYul.Presentacion.Controles"
         xmlns:comp="clr-namespace:EyeYul.Presentacion.Componentes"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="EyeYul" Width="1180" Height="770" MinWidth="1000" MinHeight="680"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Icon="pack://application:,,,/EyeYul;component/app.ico"
-        WindowStartupLocation="CenterScreen" FontFamily="{StaticResource SansFont}">
+        WindowStartupLocation="CenterScreen" FontFamily="{StaticResource SansFont}"
+        TextOptions.TextFormattingMode="Display">
+
+    <!-- Chrome nativo propio: sin esto (WindowStyle=None + AllowsTransparency=True) WPF no da
+         NINGUN borde para redimensionar arrastrando ni Aero-snap. CaptionHeight cubre la franja
+         superior de 32px (ahí ya vive el DragMove manual, que ya no hace falta) y da doble-clic
+         para maximizar y arrastre-a-los-bordes para snap, gratis. Los botones de la barra de
+         título se marcan IsHitTestVisibleInChrome para que sigan siendo clicables. -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="32" CornerRadius="0" GlassFrameThickness="0" ResizeBorderThickness="6" />
+    </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
         <app:StringToVisibilityConverter x:Key="StrToVis" />
@@ -18,9 +29,13 @@
         <app:ActiveSubForegroundConverter x:Key="ActiveWhiteFg" />
         <app:ActiveInkForegroundConverter x:Key="ActiveInkFg" />
         <app:ActiveSubForegroundConverter x:Key="ActiveSubFg" />
-        <app:ActiveChipTextConverter x:Key="ChipText" />
         <app:IconKeyToGeometryConverter x:Key="IconKeyToGeometry" />
-        <app:CountToVisibilityInverseConverter x:Key="CountToVisibilityInverse" />
+        <app:EstadoVentanaAMargenConverter x:Key="EstadoAMargen" />
+        <app:EstadoVentanaARadioConverter x:Key="EstadoARadio" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <app:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+        <app:EditandoATextoConverter x:Key="EditandoATexto" />
+        <app:BoolToOpacityConverter x:Key="BoolToOpacity" />
 
         <Style x:Key="NavItemButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
@@ -81,31 +96,57 @@
          La sombra vive en un Border vacío DETRÁS del contenido: si el efecto envolviera
          al contenido, WPF rasterizaría la ventana completa en superficies intermedias y
          recalcularía la sombra en cada tick del temporizador (mucha RAM y CPU de render).
-         Con un Border hermano vacío solo se sombrea el rectángulo redondeado. -->
-    <Grid Margin="12">
-        <Border CornerRadius="18" Background="{DynamicResource PanelBrush}">
+         Con un Border hermano vacío solo se sombrea el rectángulo redondeado.
+
+         Margen y radio de esquina se apagan al maximizar (Converter sobre WindowState):
+         maximizada, la ventana debe llenar el área de trabajo exacta, sin el hueco de 12px
+         ni esquinas redondas asomando fuera de la pantalla — igual que Sublime Text. -->
+    <Grid Margin="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState, Converter={StaticResource EstadoAMargen}}">
+        <Border Background="{DynamicResource PanelBrush}"
+                CornerRadius="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState, Converter={StaticResource EstadoARadio}}">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.18" Color="#000000" />
             </Border.Effect>
         </Border>
 
-        <Border CornerRadius="18" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
-                BorderThickness="1">
-        <Border CornerRadius="18" ClipToBounds="True">
+        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                CornerRadius="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState, Converter={StaticResource EstadoARadio}}">
+        <Border ClipToBounds="True"
+                CornerRadius="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState, Converter={StaticResource EstadoARadio}}">
             <DockPanel>
-                <Border DockPanel.Dock="Top" Height="32" Background="Transparent" MouseLeftButtonDown="OnDragMove">
+                <Border DockPanel.Dock="Top" Height="32" Background="Transparent">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource TitleBarButton}" Click="OnMinimizeClick" ToolTip="Minimizar">
+                        <Button Style="{StaticResource TitleBarButton}" Click="OnMinimizeClick" ToolTip="Minimizar"
+                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
                             <Button.Content>
                                 <LineGeometry StartPoint="0,5" EndPoint="10,5" />
                             </Button.Content>
                         </Button>
-                        <Button Style="{StaticResource TitleBarButton}" Click="OnMaximizeClick" ToolTip="Maximizar">
+                        <Button x:Name="BotonMaximizar" Click="OnMaximizeClick" ToolTip="Maximizar"
+                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
                             <Button.Content>
                                 <RectangleGeometry Rect="0,0,10,10" />
                             </Button.Content>
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState}" Value="Maximized">
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <GeometryGroup>
+                                                        <RectangleGeometry Rect="0,2,8,8" />
+                                                        <RectangleGeometry Rect="2,0,8,8" />
+                                                    </GeometryGroup>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="ToolTip" Value="Restaurar" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                         </Button>
-                        <Button Style="{StaticResource CloseTitleBarButton}" Click="OnCloseClick" ToolTip="Cerrar">
+                        <Button Style="{StaticResource CloseTitleBarButton}" Click="OnCloseClick" ToolTip="Cerrar"
+                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
                             <Button.Content>
                                 <GeometryGroup>
                                     <LineGeometry StartPoint="0,0" EndPoint="10,10" />
@@ -155,10 +196,30 @@
                                             Foreground="{Binding ThemeMode, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=system}" />
                                 </UniformGrid>
                             </Border>
-                            <DockPanel Margin="8,8,0,0">
-                                <TextBlock Text="Licencia Activa" Style="{StaticResource MonoLabel}" FontWeight="Normal" />
-                                <TextBlock Text="OK" Style="{DynamicResource MonoLabel}" Foreground="{StaticResource GreenBrush}" HorizontalAlignment="Right" />
-                            </DockPanel>
+                            <Button Margin="8,8,0,0" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    Command="{Binding AbrirLicenciaCommand}" HorizontalContentAlignment="Stretch"
+                                    ToolTip="Ver o activar tu licencia">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <ContentPresenter />
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <DockPanel>
+                                    <TextBlock Text="Licencia" Style="{StaticResource MonoLabel}" FontWeight="Normal" />
+                                    <TextBlock Text="{Binding LicenciaEtiqueta}" HorizontalAlignment="Right">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource MonoLabel}">
+                                                <Setter Property="Foreground" Value="{DynamicResource AmberBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding LicenciaEsPremium}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource GreenBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DockPanel>
+                            </Button>
                         </StackPanel>
 
                         <!-- Encabezado + búsqueda + nav -->
@@ -202,7 +263,7 @@
                                     Background="{Binding ActiveTab, Converter={StaticResource ActiveBg}, ConverterParameter=wellness}">
                                 <StackPanel Orientation="Horizontal">
                                     <Path Style="{StaticResource Ico}" Data="{StaticResource IcoHeart}" Width="15" Height="15" Stroke="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=wellness}" />
-                                    <TextBlock Text="Postura y Parpadeo" Margin="10,0,0,0" FontSize="12.5" Foreground="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=wellness}" />
+                                    <TextBlock Text="Acciones Saludables" Margin="10,0,0,0" FontSize="12.5" Foreground="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=wellness}" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource NavItemButton}" Command="{Binding SelectTabCommand}" CommandParameter="automations" Margin="0,4,0,0"
@@ -272,114 +333,24 @@
                                 <comp:TarjetaBase Grid.Column="0">
                                     <DockPanel>
                                         <comp:EtiquetaTitulo Texto="Monitor Inteligente" DockPanel.Dock="Top" />
-                                        
+
                                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
                                             <comp:BotonRelleno Comando="{Binding TogglePauseCommand}" Texto="{Binding PauseButtonText}" />
                                             <comp:BotonRelleno Comando="{Binding ResetCommand}" Texto="Reiniciar" />
                                             <comp:BotonRelleno Comando="{Binding StartBreakCommand}" Texto="Descansar Ya" />
                                         </StackPanel>
+                                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                                            <TextBlock Text="Pausar cada" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="0,0,8,0" />
+                                            <c:SelectorLista ItemsSource="{Binding IntervalosDisponibles}" Seleccionado="{Binding IntervaloMinutosText, Mode=TwoWay}" Width="80" Height="32" />
+                                            <TextBlock Text="minutos" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="8,0,0,0" />
+                                        </StackPanel>
                                         <c:AnilloProgreso Percent="{Binding Percent}" CenterText="{Binding TimerText}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,18" />
                                     </DockPanel>
                                 </comp:TarjetaBase>
 
-                                <!-- Panel derecho: simulador + stats -->
+                                <!-- Panel derecho: stats -->
                                 <StackPanel Grid.Column="2">
-                                    <comp:TarjetaBase Margin="0,0,0,24">
-                                        <StackPanel>
-                                            <comp:EtiquetaTitulo Texto="Simulador de Actividad (S.O.)" />
-                                            <TextBlock Text="Toca los botones para simular escenarios de uso en tu PC:" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="0,4,0,10" TextWrapping="Wrap" />
-
-                                            <Button Command="{Binding ToggleSimCommand}" CommandParameter="videocall" Cursor="Hand" Margin="0,0,0,8" HorizontalContentAlignment="Stretch">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Background="{Binding SimContext, Converter={StaticResource ActiveSolidBg}, ConverterParameter=videocall}" CornerRadius="14" Padding="12" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
-                                                            <ContentPresenter />
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                                <DockPanel>
-                                                    <Border DockPanel.Dock="Right" CornerRadius="999" Background="#22000000" Padding="8,2" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding SimContext, Converter={StaticResource ChipText}, ConverterParameter=videocall}" FontFamily="{StaticResource MonoFont}" FontSize="9" FontWeight="Bold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=videocall}" />
-                                                    </Border>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoVideo}" Stroke="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=videocall}" VerticalAlignment="Center" />
-                                                        <StackPanel Margin="10,0,0,0">
-                                                            <TextBlock Text="Llamada por Zoom o Teams" FontSize="12" FontWeight="SemiBold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=videocall}" />
-                                                            <TextBlock Text="Detecta micrófono/cámara activos" FontSize="9" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=videocall}" Opacity="0.85" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </DockPanel>
-                                            </Button>
-
-                                            <Button Command="{Binding ToggleSimCommand}" CommandParameter="writing" Cursor="Hand" Margin="0,0,0,8" HorizontalContentAlignment="Stretch">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Background="{Binding SimContext, Converter={StaticResource ActiveSolidBg}, ConverterParameter=writing}" CornerRadius="14" Padding="12" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
-                                                            <ContentPresenter />
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                                <DockPanel>
-                                                    <Border DockPanel.Dock="Right" CornerRadius="999" Background="#22000000" Padding="8,2" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding SimContext, Converter={StaticResource ChipText}, ConverterParameter=writing}" FontFamily="{StaticResource MonoFont}" FontSize="9" FontWeight="Bold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=writing}" />
-                                                    </Border>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoKeyboard}" Stroke="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=writing}" VerticalAlignment="Center" />
-                                                        <StackPanel Margin="10,0,0,0">
-                                                            <TextBlock Text="Escritura Intensiva (Teclado)" FontSize="12" FontWeight="SemiBold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=writing}" />
-                                                            <TextBlock Text="Retrasa el descanso 2 minutos" FontSize="9" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=writing}" Opacity="0.85" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </DockPanel>
-                                            </Button>
-
-                                            <Button Command="{Binding ToggleSimCommand}" CommandParameter="video" Cursor="Hand" Margin="0,0,0,8" HorizontalContentAlignment="Stretch">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Background="{Binding SimContext, Converter={StaticResource ActiveSolidBg}, ConverterParameter=video}" CornerRadius="14" Padding="12" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
-                                                            <ContentPresenter />
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                                <DockPanel>
-                                                    <Border DockPanel.Dock="Right" CornerRadius="999" Background="#22000000" Padding="8,2" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding SimContext, Converter={StaticResource ChipText}, ConverterParameter=video}" FontFamily="{StaticResource MonoFont}" FontSize="9" FontWeight="Bold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=video}" />
-                                                    </Border>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoTv}" Stroke="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=video}" VerticalAlignment="Center" />
-                                                        <StackPanel Margin="10,0,0,0">
-                                                            <TextBlock Text="Video en Pantalla Completa" FontSize="12" FontWeight="SemiBold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=video}" />
-                                                            <TextBlock Text="Pausa alertas durante Netflix/Youtube" FontSize="9" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=video}" Opacity="0.85" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </DockPanel>
-                                            </Button>
-
-                                            <Button Command="{Binding ToggleSimCommand}" CommandParameter="inactive" Cursor="Hand" HorizontalContentAlignment="Stretch">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Background="{Binding SimContext, Converter={StaticResource ActiveSolidBg}, ConverterParameter=inactive}" CornerRadius="14" Padding="12" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
-                                                            <ContentPresenter />
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                                <DockPanel>
-                                                    <Border DockPanel.Dock="Right" CornerRadius="999" Background="#22000000" Padding="8,2" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding SimContext, Converter={StaticResource ChipText}, ConverterParameter=inactive}" FontFamily="{StaticResource MonoFont}" FontSize="9" FontWeight="Bold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=inactive}" />
-                                                    </Border>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoUserCheck}" Stroke="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=inactive}" VerticalAlignment="Center" />
-                                                        <StackPanel Margin="10,0,0,0">
-                                                            <TextBlock Text="Inactividad del Usuario (AFK)" FontSize="12" FontWeight="SemiBold" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=inactive}" />
-                                                            <TextBlock Text="Resetea el contador si te alejas" FontSize="9" Foreground="{Binding SimContext, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=inactive}" Opacity="0.85" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </DockPanel>
-                                            </Button>
-                                        </StackPanel>
-                                    </comp:TarjetaBase>
-
-                                    <Grid Margin="0,16,0,0">
+                                    <Grid Margin="0,0,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="14" />
@@ -403,8 +374,12 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- ===== STATS / OTRAS (placeholder funcional con enlace a ventanas dedicadas) ===== -->
+                            <!-- ===== STATS / Historial de Uso ===== -->
                             <StackPanel Visibility="{Binding ActiveTab, Converter={StaticResource StrToVis}, ConverterParameter=stats}">
+                                <DockPanel Margin="0,0,0,16">
+                                    <TextBlock DockPanel.Dock="Left" Text="Viendo el día:" FontSize="11" Foreground="{DynamicResource SubBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <c:SelectorFecha Fecha="{Binding HistorialFecha, Mode=TwoWay}" Height="34" HorizontalAlignment="Left" Width="150" />
+                                </DockPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" /><ColumnDefinition Width="14" /><ColumnDefinition Width="*" /><ColumnDefinition Width="14" /><ColumnDefinition Width="*" />
@@ -412,30 +387,30 @@
                                     <Border Grid.Column="0" Style="{StaticResource Card}">
                                         <StackPanel>
                                             <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoHourglass}" Width="18" Height="18" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Left" />
-                                            <TextBlock Text="105 minutos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
-                                            <TextBlock Text="TIEMPO OCULAR PROTEGIDO" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
+                                            <TextBlock Text="{Binding HistorialTiempoActivo}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
+                                            <TextBlock Text="TIEMPO ACTIVO" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Grid.Column="2" Style="{StaticResource Card}">
                                         <StackPanel>
                                             <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoShieldCheck}" Width="18" Height="18" Stroke="{StaticResource AmberBrush}" HorizontalAlignment="Left" />
-                                            <TextBlock Text="92% promedio" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
-                                            <TextBlock Text="EFICIENCIA DE POSTURA" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
+                                            <TextBlock Text="{Binding HistorialPuntaje, StringFormat={}{0} pts}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
+                                            <TextBlock Text="SCREEN SCORE" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Grid.Column="4" Style="{StaticResource Card}">
                                         <StackPanel>
                                             <Path Style="{StaticResource Ico}" Data="{StaticResource IcoFlame}" Width="18" Height="18" Stroke="#F97316" HorizontalAlignment="Left" />
-                                            <TextBlock Text="4 días seguidos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
+                                            <TextBlock Text="{Binding HistorialRachaDias}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
                                             <TextBlock Text="RACHA DE CONSISTENCIA" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>
                                 <Border Style="{StaticResource Card}" CornerRadius="20" Margin="0,16,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="Descansos Completados por Día" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource InkBrush}" />
-                                        <TextBlock Text="Screen Score de hoy y tendencia semanal" FontSize="10" Foreground="{DynamicResource SubBrush}" Margin="0,2,0,12" />
-                                        <ItemsControl x:Name="WeeklyBars" Height="150">
+                                        <TextBlock Text="Screen Score por Día" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource InkBrush}" />
+                                        <TextBlock Text="Últimos 7 días hasta la fecha elegida" FontSize="10" Foreground="{DynamicResource SubBrush}" Margin="0,2,0,12" />
+                                        <ItemsControl ItemsSource="{Binding WeeklyBars}" Height="150">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
@@ -453,26 +428,35 @@
                                 </Border>
                             </StackPanel>
 
-                            <!-- ===== WELLNESS ===== -->
+                            <!-- ===== WELLNESS: Acciones Saludables ===== -->
                             <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StrToVis}, ConverterParameter=wellness}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" /><ColumnDefinition Width="18" /><ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource Card}" CornerRadius="20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" /><RowDefinition Height="18" /><RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Postura -->
+                                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}" CornerRadius="20">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock Text="SALUD CORPORAL" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
                                             <Path DockPanel.Dock="Right" Style="{DynamicResource Ico}" Data="{StaticResource IcoChevronsUp}" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
                                         </DockPanel>
                                         <TextBlock Text="Alerta de Postura" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,10,0,0" />
-                                        <TextBlock Text="Recordatorio flotante discreto para enderezar tu columna vertebral." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
+                                        <TextBlock Text="Recordatorio para enderezar la espalda cada cierto tiempo." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
                                         <UniformGrid Rows="1" Columns="4">
-                                            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="10" Margin="0,0,3,0" Padding="0,7"><TextBlock Text="Off" FontFamily="{DynamicResource MonoFont}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SubBrush}" /></Border>
-                                            <Border Background="{DynamicResource AccentBrush}" CornerRadius="10" Margin="3,0" Padding="0,7"><TextBlock Text="10m" FontFamily="{StaticResource MonoFont}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" Foreground="White" /></Border>
-                                            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="10" Margin="3,0" Padding="0,7"><TextBlock Text="20m" FontFamily="{DynamicResource MonoFont}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SubBrush}" /></Border>
-                                            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="10" Margin="3,0,0,0" Padding="0,7"><TextBlock Text="30m" FontFamily="{DynamicResource MonoFont}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SubBrush}" /></Border>
+                                            <Button Content="Off" Command="{Binding SetAccionMinutosCommand}" CommandParameter="postura:0" Style="{StaticResource NavItemButton}" Margin="0,0,3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding PosturaMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=0}" Foreground="{Binding PosturaMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=0}" />
+                                            <Button Content="10m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="postura:10" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding PosturaMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=10}" Foreground="{Binding PosturaMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=10}" />
+                                            <Button Content="20m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="postura:20" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding PosturaMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=20}" Foreground="{Binding PosturaMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=20}" />
+                                            <Button Content="30m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="postura:30" Style="{StaticResource NavItemButton}" Margin="3,0,0,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding PosturaMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=30}" Foreground="{Binding PosturaMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=30}" />
                                         </UniformGrid>
-                                        <Button Command="{Binding TestAlertCommand}" Style="{StaticResource GhostButton}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
+                                        <Button Command="{Binding ProbarAccionCommand}" CommandParameter="postura" Style="{StaticResource GhostButton}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoBell}" Width="13" Height="13" Stroke="{StaticResource AccentBrush}" />
                                                 <TextBlock Text="Probar Alerta" Margin="6,0,0,0" />
@@ -480,21 +464,83 @@
                                         </Button>
                                     </StackPanel>
                                 </Border>
-                                <Border Grid.Column="2" Style="{StaticResource Card}" CornerRadius="20">
+
+                                <!-- Parpadeo -->
+                                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource Card}" CornerRadius="20">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock Text="HUMECTACIÓN OCULAR" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
                                             <Path DockPanel.Dock="Right" Style="{DynamicResource Ico}" Data="{StaticResource IcoEye}" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
                                         </DockPanel>
                                         <TextBlock Text="Recordatorio de Parpadeo" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,10,0,0" />
-                                        <TextBlock Text="Señal visual diminuta para motivar parpadeos rítmicos contra el ojo seco." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
+                                        <TextBlock Text="Señal para motivar parpadeos rítmicos contra el ojo seco." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
                                         <UniformGrid Rows="1" Columns="4">
-                                            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="10" Margin="0,0,3,0" Padding="0,7"><TextBlock Text="Off" FontFamily="{DynamicResource MonoFont}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SubBrush}" /></Border>
-                                            <Border Background="{DynamicResource AccentBrush}" CornerRadius="10" Margin="3,0" Padding="0,7"><TextBlock Text="5m" FontFamily="{StaticResource MonoFont}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" Foreground="White" /></Border>
-                                            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="10" Margin="3,0" Padding="0,7"><TextBlock Text="10m" FontFamily="{DynamicResource MonoFont}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SubBrush}" /></Border>
-                                            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="10" Margin="3,0,0,0" Padding="0,7"><TextBlock Text="15m" FontFamily="{DynamicResource MonoFont}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SubBrush}" /></Border>
+                                            <Button Content="Off" Command="{Binding SetAccionMinutosCommand}" CommandParameter="parpadeo:0" Style="{StaticResource NavItemButton}" Margin="0,0,3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding ParpadeoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=0}" Foreground="{Binding ParpadeoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=0}" />
+                                            <Button Content="5m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="parpadeo:5" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding ParpadeoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=5}" Foreground="{Binding ParpadeoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=5}" />
+                                            <Button Content="10m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="parpadeo:10" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding ParpadeoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=10}" Foreground="{Binding ParpadeoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=10}" />
+                                            <Button Content="15m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="parpadeo:15" Style="{StaticResource NavItemButton}" Margin="3,0,0,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding ParpadeoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=15}" Foreground="{Binding ParpadeoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=15}" />
                                         </UniformGrid>
-                                        <Button Command="{Binding TestAlertCommand}" Style="{StaticResource GhostButton}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
+                                        <Button Command="{Binding ProbarAccionCommand}" CommandParameter="parpadeo" Style="{StaticResource GhostButton}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoBell}" Width="13" Height="13" Stroke="{StaticResource AccentBrush}" />
+                                                <TextBlock Text="Probar Alerta" Margin="6,0,0,0" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Hidratacion -->
+                                <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}" CornerRadius="20">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock Text="HIDRATACIÓN" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
+                                            <Path DockPanel.Dock="Right" Style="{DynamicResource Ico}" Data="{StaticResource IcoDroplet}" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBlock Text="Recordatorio para Hidratarte" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,10,0,0" />
+                                        <TextBlock Text="Un aviso corto para que tomes agua durante el día." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
+                                        <UniformGrid Rows="1" Columns="4">
+                                            <Button Content="Off" Command="{Binding SetAccionMinutosCommand}" CommandParameter="hidratacion:0" Style="{StaticResource NavItemButton}" Margin="0,0,3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding HidratacionMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=0}" Foreground="{Binding HidratacionMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=0}" />
+                                            <Button Content="20m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="hidratacion:20" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding HidratacionMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=20}" Foreground="{Binding HidratacionMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=20}" />
+                                            <Button Content="30m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="hidratacion:30" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding HidratacionMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=30}" Foreground="{Binding HidratacionMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=30}" />
+                                            <Button Content="45m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="hidratacion:45" Style="{StaticResource NavItemButton}" Margin="3,0,0,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding HidratacionMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=45}" Foreground="{Binding HidratacionMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=45}" />
+                                        </UniformGrid>
+                                        <Button Command="{Binding ProbarAccionCommand}" CommandParameter="hidratacion" Style="{StaticResource GhostButton}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoBell}" Width="13" Height="13" Stroke="{StaticResource AccentBrush}" />
+                                                <TextBlock Text="Probar Alerta" Margin="6,0,0,0" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Estiramiento -->
+                                <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource Card}" CornerRadius="20">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock Text="MOVIMIENTO" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
+                                            <Path DockPanel.Dock="Right" Style="{DynamicResource Ico}" Data="{StaticResource IcoUserCheck}" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBlock Text="Recordatorio de Estiramiento" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,10,0,0" />
+                                        <TextBlock Text="Una pausa cortita para estirar brazos, cuello y espalda." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
+                                        <UniformGrid Rows="1" Columns="4">
+                                            <Button Content="Off" Command="{Binding SetAccionMinutosCommand}" CommandParameter="estiramiento:0" Style="{StaticResource NavItemButton}" Margin="0,0,3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding EstiramientoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=0}" Foreground="{Binding EstiramientoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=0}" />
+                                            <Button Content="20m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="estiramiento:20" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding EstiramientoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=20}" Foreground="{Binding EstiramientoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=20}" />
+                                            <Button Content="30m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="estiramiento:30" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding EstiramientoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=30}" Foreground="{Binding EstiramientoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=30}" />
+                                            <Button Content="45m" Command="{Binding SetAccionMinutosCommand}" CommandParameter="estiramiento:45" Style="{StaticResource NavItemButton}" Margin="3,0,0,0" HorizontalContentAlignment="Center" FontSize="10"
+                                                    Background="{Binding EstiramientoMinutos, Converter={StaticResource ActiveSolidBg}, ConverterParameter=45}" Foreground="{Binding EstiramientoMinutos, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=45}" />
+                                        </UniformGrid>
+                                        <Button Command="{Binding ProbarAccionCommand}" CommandParameter="estiramiento" Style="{StaticResource GhostButton}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoBell}" Width="13" Height="13" Stroke="{StaticResource AccentBrush}" />
                                                 <TextBlock Text="Probar Alerta" Margin="6,0,0,0" />
@@ -608,15 +654,33 @@
                                                 <TextBox Text="{Binding NewBreakName, UpdateSourceTrigger=PropertyChanged}" Padding="8" Foreground="{DynamicResource InkBrush}" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource CardBorderBrush}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2">
-                                                <TextBlock Text="Hora (HH:mm)" FontSize="9" Foreground="{DynamicResource SubBrush}" Margin="2,0,0,3" />
-                                                <TextBox Text="{Binding NewBreakTime, UpdateSourceTrigger=PropertyChanged}" Padding="8" Foreground="{DynamicResource InkBrush}" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource CardBorderBrush}" />
+                                                <TextBlock Text="Hora" FontSize="9" Foreground="{DynamicResource SubBrush}" Margin="2,0,0,3" />
+                                                <c:SelectorLista ItemsSource="{Binding HorasDisponibles}" Seleccionado="{Binding NewBreakTime, Mode=TwoWay}" Height="34" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="4">
                                                 <TextBlock Text="Duración (min)" FontSize="9" Foreground="{DynamicResource SubBrush}" Margin="2,0,0,3" />
                                                 <TextBox Text="{Binding NewBreakDurationMinutes, UpdateSourceTrigger=PropertyChanged}" Padding="8" Foreground="{DynamicResource InkBrush}" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource CardBorderBrush}" />
                                             </StackPanel>
                                         </Grid>
-                                        <UniformGrid Rows="1" Columns="7" Margin="0,10,0,0">
+
+                                        <TextBlock Text="Repetir" FontSize="9" Foreground="{DynamicResource SubBrush}" Margin="2,12,0,3" />
+                                        <UniformGrid Rows="1" Columns="4">
+                                            <Button Content="No se repite" Command="{Binding SetNewBreakRecurrenciaCommand}" CommandParameter="once" Style="{StaticResource NavItemButton}" Margin="0,0,3,0" HorizontalContentAlignment="Center"
+                                                    Background="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveSolidBg}, ConverterParameter=once}"
+                                                    Foreground="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=once}" FontSize="10.5" />
+                                            <Button Content="Cada día" Command="{Binding SetNewBreakRecurrenciaCommand}" CommandParameter="daily" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center"
+                                                    Background="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveSolidBg}, ConverterParameter=daily}"
+                                                    Foreground="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=daily}" FontSize="10.5" />
+                                            <Button Content="Cada semana" Command="{Binding SetNewBreakRecurrenciaCommand}" CommandParameter="weekly" Style="{StaticResource NavItemButton}" Margin="3,0" HorizontalContentAlignment="Center"
+                                                    Background="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveSolidBg}, ConverterParameter=weekly}"
+                                                    Foreground="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=weekly}" FontSize="10.5" />
+                                            <Button Content="Cada mes" Command="{Binding SetNewBreakRecurrenciaCommand}" CommandParameter="monthly" Style="{StaticResource NavItemButton}" Margin="3,0,0,0" HorizontalContentAlignment="Center"
+                                                    Background="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveSolidBg}, ConverterParameter=monthly}"
+                                                    Foreground="{Binding NewBreakRecurrencia, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=monthly}" FontSize="10.5" />
+                                        </UniformGrid>
+
+                                        <!-- Semanal: dias de la semana -->
+                                        <UniformGrid Rows="1" Columns="7" Margin="0,10,0,0" Visibility="{Binding NewBreakRecurrencia, Converter={StaticResource StrToVis}, ConverterParameter=weekly}">
                                             <CheckBox Content="L" IsChecked="{Binding NewBreakMon}" HorizontalAlignment="Center" Foreground="{DynamicResource InkBrush}" />
                                             <CheckBox Content="M" IsChecked="{Binding NewBreakTue}" HorizontalAlignment="Center" Foreground="{DynamicResource InkBrush}" />
                                             <CheckBox Content="X" IsChecked="{Binding NewBreakWed}" HorizontalAlignment="Center" Foreground="{DynamicResource InkBrush}" />
@@ -625,6 +689,19 @@
                                             <CheckBox Content="S" IsChecked="{Binding NewBreakSat}" HorizontalAlignment="Center" Foreground="{DynamicResource InkBrush}" />
                                             <CheckBox Content="D" IsChecked="{Binding NewBreakSun}" HorizontalAlignment="Center" Foreground="{DynamicResource InkBrush}" />
                                         </UniformGrid>
+
+                                        <!-- Mensual: dia del mes -->
+                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding NewBreakRecurrencia, Converter={StaticResource StrToVis}, ConverterParameter=monthly}">
+                                            <TextBlock Text="Día del mes" FontSize="9" Foreground="{DynamicResource SubBrush}" Margin="2,0,0,3" />
+                                            <c:SelectorLista ItemsSource="{Binding DiasDelMesDisponibles}" Seleccionado="{Binding NewBreakDayOfMonth, Mode=TwoWay}" Height="34" HorizontalAlignment="Left" Width="90" />
+                                        </StackPanel>
+
+                                        <!-- Una vez: fecha especifica -->
+                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding NewBreakRecurrencia, Converter={StaticResource StrToVis}, ConverterParameter=once}">
+                                            <TextBlock Text="Fecha" FontSize="9" Foreground="{DynamicResource SubBrush}" Margin="2,0,0,3" />
+                                            <c:SelectorFecha Fecha="{Binding NewBreakDate, Mode=TwoWay}" Height="34" HorizontalAlignment="Left" Width="140" />
+                                        </StackPanel>
+
                                         <Button Content="+ Añadir pausa" Style="{StaticResource PrimaryButton}" Command="{Binding AddPlannedBreakCommand}" HorizontalAlignment="Right" Margin="0,12,0,0" />
                                     </StackPanel>
                                 </Border>
@@ -695,27 +772,39 @@
 
                             <!-- ROUTINE: Frases -->
                             <StackPanel Visibility="{Binding ActiveSubTab, Converter={StaticResource StrToVis}, ConverterParameter=messages}">
-                                <TextBlock Text="Tus Frases de Bienestar Personalizadas" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                <TextBlock Text="Escribe mensajes propios para mostrar durante los descansos:" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="0,4,0,12" />
+                                <TextBlock Text="Frases de Bienestar" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                <TextBlock Text="Habilita o deshabilita las de fábrica, o crea las tuyas con su propio icono:" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="0,4,0,12" />
                                 <DockPanel>
-                                    <Button DockPanel.Dock="Right" Content="+ Añadir" Style="{StaticResource PrimaryButton}" Command="{Binding AddMessageCommand}" Margin="8,0,0,0" />
-                                    <TextBox Text="{Binding NewMessageText, UpdateSourceTrigger=PropertyChanged}" Padding="8" Foreground="{DynamicResource InkBrush}" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource CardBorderBrush}" />
+                                    <c:SelectorIcono DockPanel.Dock="Left" ItemsSource="{Binding IconosDisponibles}" Seleccionado="{Binding NewMessageIcon, Mode=TwoWay}" Width="38" Height="38" Margin="0,0,8,0" />
+                                    <Button DockPanel.Dock="Right" Content="Cancelar" Style="{StaticResource GhostButton}" Command="{Binding CancelEditMessageCommand}" Margin="8,0,0,0" Visibility="{Binding EstaEditandoFrase, Converter={StaticResource BoolToVis}}" />
+                                    <Button DockPanel.Dock="Right" Content="{Binding EstaEditandoFrase, Converter={StaticResource EditandoATexto}}" Style="{StaticResource PrimaryButton}" Command="{Binding AddMessageCommand}" Margin="8,0,0,0" />
+                                    <TextBox Text="{Binding NewMessageText, UpdateSourceTrigger=PropertyChanged}" Padding="8" Foreground="{DynamicResource InkBrush}" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource CardBorderBrush}" VerticalContentAlignment="Center" />
                                 </DockPanel>
 
-                                <Border Style="{StaticResource Card}" CornerRadius="16" Margin="0,16,0,0" Visibility="{Binding CustomMessages.Count, Converter={StaticResource CountToVisibilityInverse}}">
-                                    <TextBlock Text="No tienes mensajes personalizados. Se mostrarán frases por defecto." FontStyle="Italic" FontSize="11.5" Foreground="{DynamicResource SubBrush}" HorizontalAlignment="Center" />
-                                </Border>
-
-                                <ItemsControl ItemsSource="{Binding CustomMessages}" Margin="0,16,0,0">
+                                <ItemsControl ItemsSource="{Binding Frases}" Margin="0,16,0,0">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource Card}" CornerRadius="14" Margin="0,0,0,8">
                                                 <DockPanel>
-                                                    <Button DockPanel.Dock="Right" Command="{Binding DataContext.RemoveMessageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"
-                                                            Style="{StaticResource GhostButton}" Padding="8" BorderThickness="0" Background="Transparent">
+                                                    <Border DockPanel.Dock="Left" Width="32" Height="32" CornerRadius="10" Background="{DynamicResource AccentSoftBrush}" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                        <Path Style="{StaticResource Ico}" Data="{Binding IconKey, Converter={StaticResource IconKeyToGeometry}}" Width="14" Height="14" Stroke="{DynamicResource AccentBrush}" />
+                                                    </Border>
+
+                                                    <Button DockPanel.Dock="Right" Command="{Binding DataContext.RemoveMessageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding Id}"
+                                                            Style="{StaticResource GhostButton}" Padding="8" BorderThickness="0" Background="Transparent"
+                                                            Visibility="{Binding EsPredefinida, Converter={StaticResource InverseBoolToVis}}">
                                                         <Path Style="{StaticResource Ico}" Data="{StaticResource IcoTrash}" Width="14" Height="14" Stroke="{DynamicResource SubBrush}" />
                                                     </Button>
-                                                    <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                                    <Button DockPanel.Dock="Right" Command="{Binding DataContext.EditMessageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding Id}"
+                                                            Style="{StaticResource GhostButton}" Padding="8" BorderThickness="0" Background="Transparent"
+                                                            Visibility="{Binding EsPredefinida, Converter={StaticResource InverseBoolToVis}}">
+                                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoSettings}" Width="14" Height="14" Stroke="{DynamicResource SubBrush}" />
+                                                    </Button>
+                                                    <CheckBox DockPanel.Dock="Right" IsChecked="{Binding Habilitada, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,4,0"
+                                                              ToolTip="Habilitada" />
+
+                                                    <TextBlock Text="{Binding Texto}" FontSize="12" Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                                               Opacity="{Binding Habilitada, Converter={StaticResource BoolToOpacity}}" />
                                                 </DockPanel>
                                             </Border>
                                         </DataTemplate>

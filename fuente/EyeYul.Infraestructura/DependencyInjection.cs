@@ -3,6 +3,7 @@ using EyeYul.Infraestructura.Ajustes;
 using EyeYul.Infraestructura.Arranque;
 using EyeYul.Infraestructura.Automatizacion;
 using EyeYul.Infraestructura.Interoperabilidad;
+using EyeYul.Infraestructura.Licencias;
 using EyeYul.Infraestructura.Persistencia;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +27,8 @@ public static class DependencyInjection
         services.AddSingleton<IAlmacenAjustes, AlmacenAjustesJson>();
         services.AddSingleton<IGestorArranque, GestorArranqueRegistro>();
         services.AddSingleton<IAutomationRunner, EjecutorAutomatizacionProcesos>();
+        services.AddSingleton<IAlmacenLicencia, AlmacenLicenciaJson>();
+        services.AddSingleton<IValidadorClaveLicencia, ValidadorClaveLicenciaEcdsa>();
 
         return services;
     }

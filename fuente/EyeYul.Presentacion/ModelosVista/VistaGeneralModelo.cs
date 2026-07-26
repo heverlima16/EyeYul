@@ -7,9 +7,12 @@ using EyeYul.Aplicacion.Abstracciones;
 using EyeYul.Aplicacion.Configuracion;
 using EyeYul.Aplicacion.Descansos;
 using EyeYul.Aplicacion.Estadisticas;
+using EyeYul.Aplicacion.Licencias;
 using EyeYul.Dominio.Entidades;
+using EyeYul.Dominio.Enumeraciones;
 using EyeYul.Presentacion.Temas;
 using EyeYul.Presentacion.Vistas;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EyeYul.Presentacion.ModelosVista;
 
@@ -24,6 +27,8 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     private readonly IReloj _clock;
 
     private readonly ServicioDescansoProgramado _plannedBreaks;
+
+    private readonly ServicioLicencia _licencia;
 
     private static readonly (DayOfWeek Dia, string Etiqueta)[] DiasDeLaSemana =
     [
@@ -64,10 +69,25 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     private string _pauseButtonText = "Pausar";
 
     [ObservableProperty]
-    private string _simContext = "";
+    private string _themeMode = "light";
 
     [ObservableProperty]
-    private string _themeMode = "light";
+    private string _licenciaEtiqueta = "";
+
+    [ObservableProperty]
+    private bool _licenciaEsPremium;
+
+    [ObservableProperty]
+    private int _posturaMinutos;
+
+    [ObservableProperty]
+    private int _parpadeoMinutos;
+
+    [ObservableProperty]
+    private int _hidratacionMinutos;
+
+    [ObservableProperty]
+    private int _estiramientoMinutos;
 
     [ObservableProperty]
     private string _streakText = "4 Días";
@@ -77,6 +97,23 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
 
     [ObservableProperty]
     private int _screenScore = 100;
+
+    [ObservableProperty]
+    private DateTime? _historialFecha = DateTime.Today;
+
+    [ObservableProperty]
+    private int _historialPuntaje;
+
+    [ObservableProperty]
+    private string _historialTiempoActivo = "0h 0m";
+
+    [ObservableProperty]
+    private int _historialDescansosTomados;
+
+    [ObservableProperty]
+    private string _historialRachaDias = "0 días seguidos";
+
+    public ObservableCollection<BarraSemanal> WeeklyBars { get; } = [];
 
     [ObservableProperty]
     private string _newBreakName = "";
@@ -108,12 +145,79 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _newBreakSun;
 
+    /// <summary>"daily" | "weekly" | "monthly" | "once".</summary>
+    [ObservableProperty]
+    private string _newBreakRecurrencia = "weekly";
+
+    [ObservableProperty]
+    private DateTime? _newBreakDate = DateTime.Today;
+
+    [ObservableProperty]
+    private string _newBreakDayOfMonth = "1";
+
     [ObservableProperty]
     private string _newMessageText = "";
 
+    [ObservableProperty]
+    private string _newMessageIcon = "IcoHeart";
+
+    [ObservableProperty]
+    private Guid? _editingFraseId;
+
+    public bool EstaEditandoFrase => EditingFraseId is not null;
+
+    partial void OnEditingFraseIdChanged(Guid? value) => OnPropertyChanged(nameof(EstaEditandoFrase));
+
+    public static IReadOnlyList<string> IntervalosDisponibles { get; } =
+        new[] { 5, 10, 15, 20, 25, 30, 45, 60, 90, 120 }.Select(m => m.ToString()).ToList();
+
+    /// <summary>Espejo en texto del intervalo entre pausas, editable desde la tarjeta "Monitor Inteligente".</summary>
+    public string IntervaloMinutosText
+    {
+        get => ((int)_settings.Current.Descansos.Interval.TotalMinutes).ToString();
+        set
+        {
+            if (!int.TryParse(value, out int minutos) || minutos <= 0)
+            {
+                return;
+            }
+
+            _settings.Current.Descansos.Interval = TimeSpan.FromMinutes(Math.Clamp(minutos, 1, 180));
+            _ = _settings.SaveAsync(_settings.Current);
+            Reset();
+            OnPropertyChanged(nameof(ActiveRoutineMode));
+        }
+    }
+
+    public static IReadOnlyList<string> HorasDisponibles { get; } = ConstruirHorasDisponibles();
+
+    public static IReadOnlyList<string> DiasDelMesDisponibles { get; } =
+        Enumerable.Range(1, 31).Select(d => d.ToString()).ToList();
+
+    private static IReadOnlyList<string> ConstruirHorasDisponibles()
+    {
+        var horas = new List<string>();
+        for (TimeOnly t = new(0, 0); ; t = t.AddMinutes(15))
+        {
+            horas.Add(t.ToString("HH:mm"));
+            if (t.Hour == 23 && t.Minute == 45)
+            {
+                break;
+            }
+        }
+
+        return horas;
+    }
+
     public ObservableCollection<PlannedBreakItem> PlannedBreaks { get; } = [];
 
-    public ObservableCollection<string> CustomMessages { get; } = [];
+    public ObservableCollection<FraseItem> Frases { get; } = [];
+
+    public static IReadOnlyList<string> IconosDisponibles { get; } =
+    [
+        "IcoHeart", "IcoEye", "IcoDroplet", "IcoActivity", "IcoChevronsUp", "IcoUserCheck",
+        "IcoMoon", "IcoSun", "IcoZap", "IcoCoffee", "IcoRotate", "IcoKeyboard", "IcoSparkles", "IcoAward"
+    ];
 
     /// <summary>Se apaga cuando la ventana no esta visible para no gastar ciclos de UI.</summary>
     public bool ActualizacionesEnVivo { get; set; } = true;
@@ -163,27 +267,50 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         IAlmacenAjustes settings,
         ServicioEstadisticas stats,
         IReloj clock,
-        ServicioDescansoProgramado plannedBreaks)
+        ServicioDescansoProgramado plannedBreaks,
+        ServicioLicencia licencia)
     {
         _scheduler = scheduler;
         _settings = settings;
         _stats = stats;
         _clock = clock;
         _plannedBreaks = plannedBreaks;
+        _licencia = licencia;
 
         ThemeMode = settings.Current.Appearance.Theme;
         TemaAplicador.Aplicar(ThemeMode);
         UpdateHeader();
+        ActualizarLicencia();
+
+        AccionesSaludablesSettings acciones = settings.Current.AccionesSaludables;
+        PosturaMinutos = (int)acciones.PosturaIntervalo.TotalMinutes;
+        ParpadeoMinutos = (int)acciones.ParpadeoIntervalo.TotalMinutes;
+        HidratacionMinutos = (int)acciones.HidratacionIntervalo.TotalMinutes;
+        EstiramientoMinutos = (int)acciones.EstiramientoIntervalo.TotalMinutes;
 
         _scheduler.Tic += OnTick;
 
         _ = RefreshStatsAsync();
         _ = RefreshPlannedBreaksAsync();
 
-        foreach (string message in settings.Current.Appearance.CustomMessages)
-        {
-            CustomMessages.Add(message);
-        }
+        RefreshFrases();
+    }
+
+    private void ActualizarLicencia()
+    {
+        LicenciaEsPremium = _licencia.EsPremiumActivo;
+        LicenciaEtiqueta = _licencia.EsPremiumActivo
+            ? "PREMIUM"
+            : _licencia.DiasRestantesTrial > 0
+                ? $"PRUEBA · {_licencia.DiasRestantesTrial}D"
+                : "PRUEBA VENCIDA";
+    }
+
+    [RelayCommand]
+    private void AbrirLicencia()
+    {
+        VentanaActivarLicencia.Mostrar(_licencia);
+        ActualizarLicencia();
     }
 
     private void OnTick(object? sender, TimeSpan remaining)
@@ -209,8 +336,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     }
 
     private string EstadoActual() =>
-        !string.IsNullOrEmpty(SimContext) ? "POSPUESTO"
-        : IsPaused ? "PAUSADO"
+        IsPaused ? "PAUSADO"
         : "TRABAJANDO";
 
     private void UpdateHeader()
@@ -219,7 +345,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         {
             "dashboard" => ("Vista General (S.O. Cockpit)", "CONTROL EN VIVO DEL TEMPORIZADOR OCULAR"),
             "routine" => ("Rutina de Descansos Programados", "FRECUENCIA DE DESCANSOS Y HORAS DE OFICINA"),
-            "wellness" => ("Postura Erguida y Salud Ocular", "CONFIGURACIÓN DE BIOMONITOREO DE WEBCAM"),
+            "wellness" => ("Acciones Saludables", "RECORDATORIOS CORTOS DE POSTURA, PARPADEO, HIDRATACIÓN Y ESTIRAMIENTO"),
             "automations" => ("Smart Pause (Reglas Automatizadas)", "REGLAS INTELIGENTES Y AUTOMATIZACIÓN"),
             "stats" => ("Historial de Productividad y Logros", "SCREEN SCORE Y RACHAS DIARIAS"),
             _ => ("EyeYul", "")
@@ -231,6 +357,8 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         UpdateHeader();
         OnPropertyChanged(nameof(RoutineSelection));
     }
+
+    partial void OnHistorialFechaChanged(DateTime? value) => _ = RefreshHistorialAsync();
 
     partial void OnActiveSubTabChanged(string value)
     {
@@ -307,6 +435,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         _ = _settings.SaveAsync(_settings.Current);
         Reset();
         OnPropertyChanged(nameof(ActiveRoutineMode));
+        OnPropertyChanged(nameof(IntervaloMinutosText));
 
         VentanaDialogoAlerta.Mostrar(
             "Modo aplicado",
@@ -369,8 +498,16 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         Name = pb.Nombre,
         TimeText = pb.HoraDelDia.ToString("HH:mm"),
         DurationText = $"Duración: {(int)pb.Duracion.TotalMinutes} mins",
-        DaysText = FormatearDias(pb.Dias),
+        DaysText = FormatearRecurrencia(pb),
         IconKey = ElegirIconoSegunNombre(pb.Nombre)
+    };
+
+    private static string FormatearRecurrencia(DescansoProgramado pb) => pb.Recurrencia switch
+    {
+        TipoRecurrencia.Diario => "Todos los días",
+        TipoRecurrencia.Mensual => $"Día {pb.DiaDelMes} de cada mes",
+        TipoRecurrencia.UnaVez => pb.FechaUnica is { } f ? $"Solo el {f:dd/MM/yyyy}" : "Sin fecha asignada",
+        _ => FormatearDias(pb.Dias)
     };
 
     private static string FormatearDias(IReadOnlySet<DayOfWeek> diasActivos)
@@ -408,14 +545,31 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void SetNewBreakRecurrencia(string valor) => NewBreakRecurrencia = valor;
+
+    [RelayCommand]
     private async Task AddPlannedBreak()
     {
         if (string.IsNullOrWhiteSpace(NewBreakName) || !TimeOnly.TryParse(NewBreakTime, out TimeOnly hora))
         {
             VentanaDialogoAlerta.Mostrar(
                 "Datos incompletos",
-                "Escribe un nombre y una hora válida (HH:mm) para la pausa.",
+                "Escribe un nombre y una hora válida para la pausa.",
                 "IcoShieldAlert");
+            return;
+        }
+
+        TipoRecurrencia recurrencia = NewBreakRecurrencia switch
+        {
+            "daily" => TipoRecurrencia.Diario,
+            "monthly" => TipoRecurrencia.Mensual,
+            "once" => TipoRecurrencia.UnaVez,
+            _ => TipoRecurrencia.Semanal
+        };
+
+        if (recurrencia == TipoRecurrencia.UnaVez && NewBreakDate is null)
+        {
+            VentanaDialogoAlerta.Mostrar("Datos incompletos", "Elige una fecha para la pausa.", "IcoShieldAlert");
             return;
         }
 
@@ -423,25 +577,37 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         {
             Nombre = NewBreakName.Trim(),
             HoraDelDia = hora,
+            Recurrencia = recurrencia,
+            DiaDelMes = int.TryParse(NewBreakDayOfMonth, out int dia) ? Math.Clamp(dia, 1, 31) : 1,
+            FechaUnica = NewBreakDate is { } f ? DateOnly.FromDateTime(f) : null,
             Duracion = TimeSpan.FromMinutes(Math.Max(1, NewBreakDurationMinutes))
         };
 
-        (DayOfWeek Dia, bool Activo)[] seleccion =
-        [
-            (DayOfWeek.Monday, NewBreakMon),
-            (DayOfWeek.Tuesday, NewBreakTue),
-            (DayOfWeek.Wednesday, NewBreakWed),
-            (DayOfWeek.Thursday, NewBreakThu),
-            (DayOfWeek.Friday, NewBreakFri),
-            (DayOfWeek.Saturday, NewBreakSat),
-            (DayOfWeek.Sunday, NewBreakSun)
-        ];
-
-        foreach ((DayOfWeek dia, bool activo) in seleccion)
+        if (recurrencia == TipoRecurrencia.Semanal)
         {
-            if (activo)
+            (DayOfWeek Dia, bool Activo)[] seleccion =
+            [
+                (DayOfWeek.Monday, NewBreakMon),
+                (DayOfWeek.Tuesday, NewBreakTue),
+                (DayOfWeek.Wednesday, NewBreakWed),
+                (DayOfWeek.Thursday, NewBreakThu),
+                (DayOfWeek.Friday, NewBreakFri),
+                (DayOfWeek.Saturday, NewBreakSat),
+                (DayOfWeek.Sunday, NewBreakSun)
+            ];
+
+            foreach ((DayOfWeek diaSemana, bool activo) in seleccion)
             {
-                pb.Dias.Add(dia);
+                if (activo)
+                {
+                    pb.Dias.Add(diaSemana);
+                }
+            }
+
+            if (pb.Dias.Count == 0)
+            {
+                VentanaDialogoAlerta.Mostrar("Datos incompletos", "Elige al menos un día de la semana.", "IcoShieldAlert");
+                return;
             }
         }
 
@@ -460,52 +626,172 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     [RelayCommand]
     private void AddMessage()
     {
-        string text = NewMessageText.Trim();
-        if (string.IsNullOrEmpty(text))
+        string texto = NewMessageText.Trim();
+        if (string.IsNullOrEmpty(texto))
         {
             return;
         }
 
-        _settings.Current.Appearance.CustomMessages.Add(text);
-        CustomMessages.Add(text);
+        List<FraseBienestar> frases = _settings.Current.Appearance.Frases;
+
+        if (EditingFraseId is { } id)
+        {
+            FraseBienestar? existente = frases.FirstOrDefault(f => f.Id == id && !f.EsPredefinida);
+            if (existente is not null)
+            {
+                existente.Texto = texto;
+                existente.IconKey = NewMessageIcon;
+            }
+
+            EditingFraseId = null;
+        }
+        else
+        {
+            frases.Add(new FraseBienestar
+            {
+                Texto = texto,
+                IconKey = NewMessageIcon,
+                Habilitada = true,
+                EsPredefinida = false
+            });
+        }
+
         _ = _settings.SaveAsync(_settings.Current);
         NewMessageText = "";
+        NewMessageIcon = "IcoHeart";
+        RefreshFrases();
     }
 
     [RelayCommand]
-    private void RemoveMessage(string message)
+    private void CancelEditMessage()
     {
-        _settings.Current.Appearance.CustomMessages.Remove(message);
-        CustomMessages.Remove(message);
+        EditingFraseId = null;
+        NewMessageText = "";
+        NewMessageIcon = "IcoHeart";
+    }
+
+    [RelayCommand]
+    private void EditMessage(Guid id)
+    {
+        FraseBienestar? frase = _settings.Current.Appearance.Frases.FirstOrDefault(f => f.Id == id);
+        if (frase is null || frase.EsPredefinida)
+        {
+            return;
+        }
+
+        EditingFraseId = id;
+        NewMessageText = frase.Texto;
+        NewMessageIcon = frase.IconKey;
+    }
+
+    [RelayCommand]
+    private void RemoveMessage(Guid id)
+    {
+        List<FraseBienestar> frases = _settings.Current.Appearance.Frases;
+        FraseBienestar? frase = frases.FirstOrDefault(f => f.Id == id);
+        if (frase is null || frase.EsPredefinida)
+        {
+            return;
+        }
+
+        frases.Remove(frase);
+        _ = _settings.SaveAsync(_settings.Current);
+
+        if (EditingFraseId == id)
+        {
+            EditingFraseId = null;
+            NewMessageText = "";
+            NewMessageIcon = "IcoHeart";
+        }
+
+        RefreshFrases();
+    }
+
+    private void RefreshFrases()
+    {
+        Frases.Clear();
+        foreach (FraseBienestar f in _settings.Current.Appearance.Frases)
+        {
+            Frases.Add(new FraseItem
+            {
+                Id = f.Id,
+                Texto = f.Texto,
+                IconKey = f.IconKey,
+                EsPredefinida = f.EsPredefinida,
+                Habilitada = f.Habilitada,
+                AlCambiarHabilitada = OnFraseHabilitadaCambiada
+            });
+        }
+    }
+
+    private void OnFraseHabilitadaCambiada(FraseItem item)
+    {
+        FraseBienestar? frase = _settings.Current.Appearance.Frases.FirstOrDefault(f => f.Id == item.Id);
+        if (frase is null)
+        {
+            return;
+        }
+
+        frase.Habilitada = item.Habilitada;
         _ = _settings.SaveAsync(_settings.Current);
     }
 
     [RelayCommand]
     private void OpenSettings() => OpenSettingsAction?.Invoke();
 
+    /// <summary>"postura:20" -&gt; guarda 20 minutos de intervalo para la accion de postura. "0" es Off.</summary>
     [RelayCommand]
-    private void TestAlert() => VentanaDialogoAlerta.Mostrar(
-        "Alerta de prueba",
-        "Así se verá el recordatorio de salud (postura/parpadeo) cuando se active.");
-
-    /// <summary>
-    /// Simula un contexto (juego, reunion, video). Mientras hay contexto activo
-    /// el temporizador queda en pausa, y se reanuda al desactivarlo.
-    /// </summary>
-    [RelayCommand]
-    private void ToggleSim(string id)
+    private void SetAccionMinutos(string clave)
     {
-        SimContext = SimContext == id ? "" : id;
-
-        bool debePausar = !string.IsNullOrEmpty(SimContext);
-        if (debePausar != _scheduler.EstaEnPausa)
+        string[] partes = clave.Split(':');
+        if (partes.Length != 2 || !int.TryParse(partes[1], out int minutos))
         {
-            _scheduler.AlternarPausa();
+            return;
         }
 
-        IsPaused = _scheduler.EstaEnPausa;
-        PauseButtonText = IsPaused ? "Continuar" : "Pausar";
-        StatusText = EstadoActual();
+        TimeSpan intervalo = TimeSpan.FromMinutes(minutos);
+        AccionesSaludablesSettings acciones = _settings.Current.AccionesSaludables;
+
+        switch (partes[0])
+        {
+            case "postura":
+                acciones.PosturaIntervalo = intervalo;
+                PosturaMinutos = minutos;
+                break;
+
+            case "parpadeo":
+                acciones.ParpadeoIntervalo = intervalo;
+                ParpadeoMinutos = minutos;
+                break;
+
+            case "hidratacion":
+                acciones.HidratacionIntervalo = intervalo;
+                HidratacionMinutos = minutos;
+                break;
+
+            case "estiramiento":
+                acciones.EstiramientoIntervalo = intervalo;
+                EstiramientoMinutos = minutos;
+                break;
+        }
+
+        _ = _settings.SaveAsync(_settings.Current);
+    }
+
+    [RelayCommand]
+    private async Task ProbarAccionAsync(string accion)
+    {
+        TipoAccionSaludable tipo = accion switch
+        {
+            "postura" => TipoAccionSaludable.Postura,
+            "parpadeo" => TipoAccionSaludable.Parpadeo,
+            "hidratacion" => TipoAccionSaludable.Hidratacion,
+            "estiramiento" => TipoAccionSaludable.Estiramiento,
+            _ => TipoAccionSaludable.Postura
+        };
+
+        IControladorAccionSaludable controlador = App.Services.GetRequiredService<IControladorAccionSaludable>();
+        await controlador.MostrarAsync(tipo);
     }
 
     public async Task RefreshStatsAsync()
@@ -513,12 +799,80 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         ResumenDiario summary = await _stats.ObtenerResumenDiarioAsync(_clock.Today);
         ScreenScore = summary.Puntaje;
         CompletedText = summary.DescansosTomados.ToString();
+
+        await RefreshHistorialAsync();
     }
+
+    public async Task RefreshHistorialAsync()
+    {
+        DateOnly fecha = DateOnly.FromDateTime(HistorialFecha ?? DateTime.Today);
+
+        // Una sola consulta de rango cubre tanto las barras de la semana como la racha:
+        // no hace falta una pausa por dia para saber si hoy tocaba pausa (eso ya se resuelve
+        // en tiempo real via ProgramadorDescansos); esto es solo el resumen historico.
+        DateOnly desde = fecha.AddDays(-59);
+        IReadOnlyList<PuntajeVisualDiario> rango = await _stats.ObtenerRangoPuntajeAsync(desde, fecha);
+        Dictionary<DateOnly, PuntajeVisualDiario> porFecha = rango.ToDictionary(p => p.Fecha);
+
+        PuntajeVisualDiario DiaOrDefault(DateOnly f) =>
+            porFecha.TryGetValue(f, out PuntajeVisualDiario? p) ? p : new PuntajeVisualDiario { Fecha = f };
+
+        PuntajeVisualDiario diaSeleccionado = DiaOrDefault(fecha);
+        HistorialPuntaje = diaSeleccionado.Puntaje;
+        HistorialTiempoActivo = Formatear(diaSeleccionado.TiempoActivo);
+        HistorialDescansosTomados = diaSeleccionado.DescansosTomados;
+
+        int racha = 0;
+        for (DateOnly f = fecha; f >= desde; f = f.AddDays(-1))
+        {
+            if (DiaOrDefault(f).DescansosTomados <= 0)
+            {
+                break;
+            }
+
+            racha++;
+        }
+
+        HistorialRachaDias = $"{racha} día{(racha == 1 ? "" : "s")} seguidos";
+
+        WeeklyBars.Clear();
+        int maxPuntaje = Math.Max(1, Enumerable.Range(0, 7).Select(i => DiaOrDefault(fecha.AddDays(-6 + i)).Puntaje).Max());
+        for (int i = 0; i < 7; i++)
+        {
+            DateOnly f = fecha.AddDays(-6 + i);
+            PuntajeVisualDiario dia = DiaOrDefault(f);
+            string etiqueta = DiasDeLaSemana.First(d => d.Dia == f.DayOfWeek).Etiqueta;
+            WeeklyBars.Add(new BarraSemanal(etiqueta, dia.Puntaje.ToString(), Math.Max(4.0, dia.Puntaje / (double)maxPuntaje * 100.0)));
+        }
+    }
+
+    private static string Formatear(TimeSpan t) => $"{(int)t.TotalHours}h {t.Minutes}m";
 
     public void Dispose()
     {
         _scheduler.Tic -= OnTick;
     }
+}
+
+public sealed record BarraSemanal(string Label, string Value, double Height);
+
+/// <summary>Fila de la lista de Frases. Predefinida: solo habilitar/deshabilitar. Del usuario: todo.</summary>
+public sealed partial class FraseItem : ObservableObject
+{
+    public required Guid Id { get; init; }
+
+    public required string Texto { get; init; }
+
+    public required string IconKey { get; init; }
+
+    public required bool EsPredefinida { get; init; }
+
+    public Action<FraseItem>? AlCambiarHabilitada { get; init; }
+
+    [ObservableProperty]
+    private bool _habilitada;
+
+    partial void OnHabilitadaChanged(bool value) => AlCambiarHabilitada?.Invoke(this);
 }
 
 public sealed class PlannedBreakItem

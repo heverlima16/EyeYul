@@ -14,43 +14,43 @@ internal static class LectorAccesoCapacidades
     private const string CamPath =
         @"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam";
 
-    public static bool IsMicrophoneInUse() => AnyDeviceInUse(MicPath);
+    public static bool EstaMicrofonoEnUso() => AlgunDispositivoEnUso(MicPath);
 
-    public static bool IsCameraInUse() => AnyDeviceInUse(CamPath);
+    public static bool EstaCamaraEnUso() => AlgunDispositivoEnUso(CamPath);
 
-    private static bool AnyDeviceInUse(string path)
+    private static bool AlgunDispositivoEnUso(string ruta)
     {
         try
         {
-            using RegistryKey? root = Registry.CurrentUser.OpenSubKey(path);
-            if (root is null)
+            using RegistryKey? raiz = Registry.CurrentUser.OpenSubKey(ruta);
+            if (raiz is null)
             {
                 return false;
             }
 
-            foreach (string subKeyName in root.GetSubKeyNames())
+            foreach (string nombreSubclave in raiz.GetSubKeyNames())
             {
-                using RegistryKey? subKey = root.OpenSubKey(subKeyName);
-                if (subKey is null)
+                using RegistryKey? subclave = raiz.OpenSubKey(nombreSubclave);
+                if (subclave is null)
                 {
                     continue;
                 }
 
-                if (InUse(subKey))
+                if (EstaEnUso(subclave))
                 {
                     return true;
                 }
 
                 // Las apps de escritorio clásicas cuelgan de NonPackaged.
-                if (!subKeyName.Equals("NonPackaged", StringComparison.OrdinalIgnoreCase))
+                if (!nombreSubclave.Equals("NonPackaged", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                foreach (string name in subKey.GetSubKeyNames())
+                foreach (string nombre in subclave.GetSubKeyNames())
                 {
-                    using RegistryKey? nonPackaged = subKey.OpenSubKey(name);
-                    if (nonPackaged is not null && InUse(nonPackaged))
+                    using RegistryKey? sinEmpaquetar = subclave.OpenSubKey(nombre);
+                    if (sinEmpaquetar is not null && EstaEnUso(sinEmpaquetar))
                     {
                         return true;
                     }
@@ -65,6 +65,6 @@ internal static class LectorAccesoCapacidades
         return false;
     }
 
-    private static bool InUse(RegistryKey key) =>
-        key.GetValue("LastUsedTimeStop") is long stop && stop == 0;
+    private static bool EstaEnUso(RegistryKey clave) =>
+        clave.GetValue("LastUsedTimeStop") is long detenido && detenido == 0;
 }

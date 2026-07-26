@@ -1,9 +1,10 @@
 <Window x:Class="EyeYul.Presentacion.Vistas.VentanaAjustes"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:EyeYul.Presentacion.Controles"
         Title="EyeYul — Ajustes" Width="460" Height="640"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource CreamBrush}"
-        FontFamily="Segoe UI" ResizeMode="CanMinimize">
+        FontFamily="Segoe UI" ResizeMode="CanMinimize" TextOptions.TextFormattingMode="Display">
     <Window.Resources>
         <!-- Campo para escribir un numero: se digita, no se arrastra. -->
         <Style x:Key="CampoNumerico" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -35,19 +36,15 @@
 
                 <TextBlock Text="Intervalo entre pausas" Foreground="{DynamicResource InkBrush}" />
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,14">
-                    <TextBox Style="{StaticResource CampoNumerico}"
-                             Text="{Binding IntervalMinutes, StringFormat={}{0:0}}"
-                             PreviewTextInput="SoloDigitos" />
-                    <TextBlock Text="minutos · entre 1 y 120" VerticalAlignment="Center" Margin="10,0,0,0"
+                    <c:SelectorLista ItemsSource="{Binding IntervalosDisponibles}" Seleccionado="{Binding IntervalMinutesText, Mode=TwoWay}" Width="90" Height="34" />
+                    <TextBlock Text="minutos · entre 1 y 120 (digita cualquier valor)" VerticalAlignment="Center" Margin="10,0,0,0"
                                Foreground="{DynamicResource MutedBrush}" />
                 </StackPanel>
 
                 <TextBlock Text="Duración de la pausa" Foreground="{DynamicResource InkBrush}" />
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,14">
-                    <TextBox Style="{StaticResource CampoNumerico}"
-                             Text="{Binding DurationSeconds, StringFormat={}{0:0}}"
-                             PreviewTextInput="SoloDigitos" />
-                    <TextBlock Text="segundos · entre 5 y 600" VerticalAlignment="Center" Margin="10,0,0,0"
+                    <c:SelectorLista ItemsSource="{Binding DuracionesDisponibles}" Seleccionado="{Binding DurationSecondsText, Mode=TwoWay}" Width="90" Height="34" />
+                    <TextBlock Text="segundos · entre 5 y 600 (digita cualquier valor)" VerticalAlignment="Center" Margin="10,0,0,0"
                                Foreground="{DynamicResource MutedBrush}" />
                 </StackPanel>
 

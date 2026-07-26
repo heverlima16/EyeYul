@@ -12,7 +12,9 @@ public sealed class RepositorioDescansoProgramado(BaseDatosSqlite bd) : IPlanned
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            SELECT Id, Nombre, HoraDelDia, Dias, DuracionSeg, Habilitado, CuentaTiempoAusente FROM descansos_programados
+            SELECT Id, Nombre, HoraDelDia, Dias, DuracionSeg, Habilitado, CuentaTiempoAusente,
+                   Recurrencia, DiaDelMes, FechaUnica
+            FROM descansos_programados
             """;
 
         var lista = new List<DescansoProgramado>();
@@ -26,7 +28,10 @@ public sealed class RepositorioDescansoProgramado(BaseDatosSqlite bd) : IPlanned
                 HoraDelDia = TimeOnly.Parse(lector.GetString(2)),
                 Duracion = TimeSpan.FromSeconds(lector.GetDouble(4)),
                 Habilitado = lector.GetInt32(5) != 0,
-                CuentaTiempoAusente = lector.GetInt32(6) != 0
+                CuentaTiempoAusente = lector.GetInt32(6) != 0,
+                Recurrencia = (TipoRecurrencia)lector.GetInt32(7),
+                DiaDelMes = lector.GetInt32(8),
+                FechaUnica = lector.IsDBNull(9) ? null : DateOnly.Parse(lector.GetString(9))
             };
 
             foreach (DayOfWeek dia in LeerDias(lector.GetString(3)))
@@ -46,11 +51,13 @@ public sealed class RepositorioDescansoProgramado(BaseDatosSqlite bd) : IPlanned
         using SqliteCommand cmd = cn.CreateCommand();
 
         cmd.CommandText = """
-            INSERT INTO descansos_programados (Id, Nombre, HoraDelDia, Dias, DuracionSeg, Habilitado, CuentaTiempoAusente)
-            VALUES ($id, $nombre, $hora, $dias, $duracion, $habilitado, $ausente)
+            INSERT INTO descansos_programados
+                (Id, Nombre, HoraDelDia, Dias, DuracionSeg, Habilitado, CuentaTiempoAusente, Recurrencia, DiaDelMes, FechaUnica)
+            VALUES ($id, $nombre, $hora, $dias, $duracion, $habilitado, $ausente, $recurrencia, $diaDelMes, $fechaUnica)
             ON CONFLICT(Id) DO UPDATE SET
                 Nombre=$nombre, HoraDelDia=$hora, Dias=$dias, DuracionSeg=$duracion,
-                Habilitado=$habilitado, CuentaTiempoAusente=$ausente;
+                Habilitado=$habilitado, CuentaTiempoAusente=$ausente, Recurrencia=$recurrencia,
+                DiaDelMes=$diaDelMes, FechaUnica=$fechaUnica;
             """;
 
         cmd.Parameters.AddWithValue("$id", programado.Id.ToString());
@@ -60,6 +67,10 @@ public sealed class RepositorioDescansoProgramado(BaseDatosSqlite bd) : IPlanned
         cmd.Parameters.AddWithValue("$duracion", programado.Duracion.TotalSeconds);
         cmd.Parameters.AddWithValue("$habilitado", programado.Habilitado ? 1 : 0);
         cmd.Parameters.AddWithValue("$ausente", programado.CuentaTiempoAusente ? 1 : 0);
+        cmd.Parameters.AddWithValue("$recurrencia", (int)programado.Recurrencia);
+        cmd.Parameters.AddWithValue("$diaDelMes", programado.DiaDelMes);
+        cmd.Parameters.AddWithValue(
+            "$fechaUnica", (object?)programado.FechaUnica?.ToString("yyyy-MM-dd") ?? DBNull.Value);
 
         await cmd.ExecuteNonQueryAsync(ct);
     }

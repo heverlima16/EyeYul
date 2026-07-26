@@ -44,20 +44,20 @@ public static class TemaAplicador
 
         ResourceDictionary resources = Application.Current.Resources;
 
-        foreach (string key in ClavesTemables)
+        foreach (string clave in ClavesTemables)
         {
-            if (palette[key] is not SolidColorBrush source)
+            if (palette[clave] is not SolidColorBrush source)
             {
                 continue;
             }
 
-            if (resources[key] is SolidColorBrush target && !target.IsFrozen)
+            if (resources[clave] is SolidColorBrush target && !target.IsFrozen)
             {
                 target.Color = source.Color;
             }
             else
             {
-                resources[key] = new SolidColorBrush(source.Color);
+                resources[clave] = new SolidColorBrush(source.Color);
             }
         }
     }
@@ -66,10 +66,10 @@ public static class TemaAplicador
     {
         try
         {
-            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(
+            using RegistryKey? clave = Registry.CurrentUser.OpenSubKey(
                 @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
 
-            return key?.GetValue("AppsUseLightTheme") is int light && light == 0;
+            return clave?.GetValue("AppsUseLightTheme") is int claro && claro == 0;
         }
         catch
         {
