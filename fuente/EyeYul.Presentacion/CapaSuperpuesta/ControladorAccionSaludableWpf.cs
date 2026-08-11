@@ -15,6 +15,19 @@ public sealed class ControladorAccionSaludableWpf : IControladorAccionSaludable
         {
             ventana = new VentanaAccionSaludable(tipo);
             ventana.Show();
+
+            // Posicionado en pixeles fisicos DESPUES de Show() (ver ControladorPantallaDescansoWpf):
+            // evita fallos con DPI mixto y deja que la ventana ya tenga su superficie en capas
+            // creada antes de estirarla a pantalla completa.
+            // PrimaryScreen puede devolver null (p.ej. reconfiguracion de monitores en curso);
+            // igual que ControladorPantallaDescansoWpf, se cae al primer monitor disponible.
+            System.Windows.Forms.Screen? pantalla = System.Windows.Forms.Screen.PrimaryScreen
+                ?? System.Windows.Forms.Screen.AllScreens.FirstOrDefault();
+
+            if (pantalla is not null)
+            {
+                ventana.PosicionarPantallaCompleta(pantalla.Bounds);
+            }
         });
 
         if (ventana is not null)

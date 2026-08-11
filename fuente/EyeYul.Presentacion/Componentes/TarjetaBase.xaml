@@ -18,7 +18,7 @@
         <ControlTemplate TargetType="UserControl">
             <Grid>
                 <!-- Solo la sombra: mismo tamaño y radio que la tarjeta, sin contenido. -->
-                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="16">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.04" Color="#000" />
                     </Border.Effect>
@@ -26,8 +26,8 @@
 
                 <!-- La tarjeta real, sin efecto, con el contenido del consumidor dentro. -->
                 <Border Background="{DynamicResource SurfaceBrush}"
-                        CornerRadius="16"
-                        Padding="20"
+                        CornerRadius="12"
+                        Padding="18"
                         BorderBrush="{DynamicResource CardBorderBrush}"
                         BorderThickness="1">
                     <ContentPresenter />

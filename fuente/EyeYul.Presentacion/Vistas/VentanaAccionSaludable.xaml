@@ -1,17 +1,20 @@
 <Window x:Class="EyeYul.Presentacion.Vistas.VentanaAccionSaludable"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="EyeYul" Width="320" Height="130"
+        Title="EyeYul"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
+        ShowInTaskbar="False" ResizeMode="NoResize"
         WindowStartupLocation="Manual" MouseLeftButtonDown="OnClick"
         FontFamily="{StaticResource SansFont}">
-    <Border CornerRadius="18" Background="#59101014" BorderBrush="#33FFFFFF" BorderThickness="1" Padding="20,0">
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <Grid Width="52" Height="52">
+    <!-- Fondo con blur Acrylic en vivo a pantalla completa (ver DesenfoqueVentana), igual que
+         la pausa: el tinte semitransparente de este Grid es lo unico que garantiza que el
+         mensaje siga siendo legible sobre cualquier cosa que haya detras. -->
+    <Grid Background="#22000000">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="720">
+            <Grid Width="110" Height="110" HorizontalAlignment="Center">
                 <!-- Postura: rebota hacia arriba, como "enderezate". -->
                 <Path x:Name="IconoPostura" Data="{StaticResource IcoChevronsUp}" Stroke="White" StrokeThickness="2.2"
-                      Width="34" Height="34" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                      Width="80" Height="80" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
                     <Path.RenderTransform>
                         <TransformGroup>
                             <TranslateTransform x:Name="TransPostura" />
@@ -21,7 +24,7 @@
 
                 <!-- Parpadeo: el ojo se achica en el eje Y, como un parpadeo. -->
                 <Path x:Name="IconoParpadeo" Data="{StaticResource IcoEye}" Stroke="White" StrokeThickness="2"
-                      Width="34" Height="34" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                      Width="80" Height="80" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
                     <Path.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform x:Name="ScalaParpadeo" ScaleX="1" ScaleY="1" />
@@ -31,7 +34,7 @@
 
                 <!-- Hidratacion: la gota "cae" con un rebote suave. -->
                 <Path x:Name="IconoHidratacion" Data="{StaticResource IcoDroplet}" Stroke="White" StrokeThickness="2"
-                      Width="30" Height="30" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                      Width="70" Height="70" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
                     <Path.RenderTransform>
                         <TransformGroup>
                             <TranslateTransform x:Name="TransHidratacion" />
@@ -40,8 +43,8 @@
                 </Path>
 
                 <!-- Estiramiento: la figura se inclina de lado a lado, como estirando. -->
-                <Path x:Name="IconoEstiramiento" Data="{StaticResource IcoUserCheck}" Stroke="White" StrokeThickness="2"
-                      Width="34" Height="34" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                <Path x:Name="IconoEstiramiento" Data="{StaticResource IcoEstirar}" Stroke="White" StrokeThickness="2"
+                      Width="80" Height="80" Stretch="Uniform" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
                     <Path.RenderTransform>
                         <TransformGroup>
                             <RotateTransform x:Name="RotaEstiramiento" Angle="0" />
@@ -49,10 +52,12 @@
                     </Path.RenderTransform>
                 </Path>
             </Grid>
-            <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
-                <TextBlock x:Name="TituloText" FontWeight="Bold" FontSize="14" Foreground="White" />
-                <TextBlock x:Name="MensajeText" FontSize="11" Foreground="#DDFFFFFF" TextWrapping="Wrap" Margin="0,4,0,0" MaxWidth="200" />
-            </StackPanel>
+
+            <TextBlock x:Name="TituloText" FontWeight="Bold" FontSize="34" Foreground="White"
+                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,28,0,0" />
+
+            <TextBlock x:Name="MensajeText" FontSize="18" FontWeight="Light" Foreground="#DDFFFFFF"
+                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0" />
         </StackPanel>
-    </Border>
+    </Grid>
 </Window>

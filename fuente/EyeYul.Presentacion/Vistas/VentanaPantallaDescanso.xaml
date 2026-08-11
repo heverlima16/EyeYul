@@ -7,7 +7,7 @@
     <!-- Fondo con blur Acrylic en vivo (ver DesenfoqueVentana) en vez del degradado solido de
          antes: el tinte semitransparente de este Grid es lo unico que garantiza que el texto
          siga siendo legible sobre cualquier cosa que haya detras. -->
-    <Grid x:Name="Root" Background="#59000000">
+    <Grid x:Name="Root" Background="#22000000">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="720">
             <Image Source="{StaticResource EyeLogo}" Width="96" Height="96"
                    HorizontalAlignment="Center" Opacity="0.95" />
@@ -27,9 +27,14 @@
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
+                                Padding="{TemplateBinding Padding}" BorderThickness="2" BorderBrush="Transparent" Name="b">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="BorderBrush" TargetName="b" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>

@@ -29,7 +29,7 @@ public partial class VentanaAccionSaludable : Window
         Loaded += (_, _) =>
         {
             // Tinte liviano: que se note el desenfoque de lo que hay detras, no una caja opaca.
-            DesenfoqueVentana.Habilitar(this, 0x59101014);
+            DesenfoqueVentana.Habilitar(this, 0x22000000);
             animacion.Begin(icono, isControllable: true);
         };
 
@@ -44,22 +44,19 @@ public partial class VentanaAccionSaludable : Window
             _autoCierre.Stop();
             _cerrada.TrySetResult();
         };
-
-        PosicionarCentro();
     }
 
     public Task EsperarCierreAsync() => _cerrada.Task;
 
-    private void PosicionarCentro()
-    {
-        // SystemParameters.WorkArea ya viene en DIPs (las mismas unidades que Left/Top de
-        // la ventana): usar Screen.PrimaryScreen (System.Windows.Forms, pixeles fisicos)
-        // aqui posicionaba la ventana fuera de pantalla en cualquier equipo con DPI != 100%.
-        Rect area = SystemParameters.WorkArea;
-
-        Left = area.Left + (area.Width - Width) / 2;
-        Top = area.Top + (area.Height - Height) / 2;
-    }
+    /// <summary>
+    /// A pantalla completa, igual que la pausa (ver ControladorPantallaDescansoWpf): coloca
+    /// en pixeles fisicos DESPUES de Show(), no desde el propio Loaded. Reposicionar el HWND
+    /// desde dentro de Loaded deja la superficie de la ventana en capas (AllowsTransparency)
+    /// con el tamaño anterior al SizeToContent original: el tinte y el blur solo cubrian esa
+    /// area chica aunque GetWindowRect ya reportara el rectangulo completo de la pantalla.
+    /// </summary>
+    public void PosicionarPantallaCompleta(System.Drawing.Rectangle bounds) =>
+        WindowNative.PlaceAtPhysical(this, bounds.X, bounds.Y, bounds.Width, bounds.Height);
 
     private void OnClick(object sender, MouseButtonEventArgs e) => Close();
 
@@ -82,7 +79,7 @@ public partial class VentanaAccionSaludable : Window
     {
         var animacion = new DoubleAnimationUsingKeyFrames { RepeatBehavior = RepeatBehavior.Forever };
         animacion.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromPercent(0)));
-        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(-8, KeyTime.FromPercent(0.5)) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut } });
+        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(-18, KeyTime.FromPercent(0.5)) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut } });
         animacion.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromPercent(1)) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseIn } });
         Storyboard.SetTarget(animacion, TransPostura);
         Storyboard.SetTargetProperty(animacion, new PropertyPath(TranslateTransform.YProperty));
@@ -110,9 +107,9 @@ public partial class VentanaAccionSaludable : Window
     private Storyboard AnimacionHidratacion()
     {
         var animacion = new DoubleAnimationUsingKeyFrames { RepeatBehavior = RepeatBehavior.Forever };
-        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(-6, KeyTime.FromPercent(0)));
-        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(6, KeyTime.FromPercent(0.5)) { EasingFunction = new BounceEase { Bounces = 1, Bounciness = 2 } });
-        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(-6, KeyTime.FromPercent(1)));
+        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(-14, KeyTime.FromPercent(0)));
+        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(14, KeyTime.FromPercent(0.5)) { EasingFunction = new BounceEase { Bounces = 1, Bounciness = 2 } });
+        animacion.KeyFrames.Add(new EasingDoubleKeyFrame(-14, KeyTime.FromPercent(1)));
         Storyboard.SetTarget(animacion, TransHidratacion);
         Storyboard.SetTargetProperty(animacion, new PropertyPath(TranslateTransform.YProperty));
 

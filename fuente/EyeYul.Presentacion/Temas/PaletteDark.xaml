@@ -33,6 +33,7 @@
     <SolidColorBrush x:Key="GreenBrush">#FF10B981</SolidColorBrush>
     <SolidColorBrush x:Key="AccentSoftBrush">#FF3B2A23</SolidColorBrush>
     <SolidColorBrush x:Key="MutedBrush">#FF6B7280</SolidColorBrush>
+    <SolidColorBrush x:Key="OverlayBrush">#A6000000</SolidColorBrush>
     <Color x:Key="SurfaceAltColor">#FF2D2D2D</Color>
     <Color x:Key="CreamColor">#FF121212</Color>
     <Color x:Key="PanelColor">#FF121212</Color>

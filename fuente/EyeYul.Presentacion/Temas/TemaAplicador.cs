@@ -13,7 +13,8 @@ public static class TemaAplicador
     private static readonly string[] ClavesTemables =
     [
         "PanelBrush", "SidebarBrush", "SurfaceBrush", "SurfaceAltBrush", "CardBorderBrush",
-        "BorderBrush", "CreamBrush", "InkBrush", "SubBrush", "MutedBrush", "AccentSoftBrush"
+        "BorderBrush", "CreamBrush", "InkBrush", "SubBrush", "MutedBrush", "AccentSoftBrush",
+        "OverlayBrush"
     ];
 
     private static string _currentTheme = "system";

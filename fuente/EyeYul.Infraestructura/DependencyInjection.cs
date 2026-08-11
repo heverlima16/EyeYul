@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddSingleton<IPlannedBreakRepository, RepositorioDescansoProgramado>();
 
         services.AddSingleton<IAlmacenAjustes, AlmacenAjustesJson>();
+        services.AddSingleton<IRespaldoAjustes, RespaldoAjustesArchivo>();
         services.AddSingleton<IGestorArranque, GestorArranqueRegistro>();
         services.AddSingleton<IAutomationRunner, EjecutorAutomatizacionProcesos>();
         services.AddSingleton<IAlmacenLicencia, AlmacenLicenciaJson>();

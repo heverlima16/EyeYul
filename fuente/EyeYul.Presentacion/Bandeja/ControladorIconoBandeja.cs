@@ -181,7 +181,6 @@ public sealed class ControladorIconoBandeja(
         }
 
         VistaGeneralModelo vm = services.GetRequiredService<VistaGeneralModelo>();
-        vm.OpenSettingsAction = ShowSettings;
 
         _mainWindow = new VentanaPrincipal(vm);
         _mainWindow.Closed += (_, _) =>

@@ -8,6 +8,7 @@
         <Style.Resources>
             <ResourceDictionary />
         </Style.Resources>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Panel.Background">
             <Setter.Value>
                 <DynamicResource ResourceKey="SurfaceAltBrush" />
@@ -41,7 +42,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border BorderThickness="1,1,1,1" Padding="{TemplateBinding Control.Padding}" CornerRadius="12,12,12,12" BorderBrush="{DynamicResource CardBorderBrush}" Background="{TemplateBinding Panel.Background}" Name="b">
+                    <Border BorderThickness="1,1,1,1" Padding="{TemplateBinding Control.Padding}" CornerRadius="10,10,10,10" BorderBrush="{DynamicResource CardBorderBrush}" Background="{TemplateBinding Panel.Background}" Name="b">
                         <ContentPresenter Content="{TemplateBinding ContentControl.Content}" ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}" ContentStringFormat="{TemplateBinding ContentControl.ContentStringFormat}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -54,6 +55,13 @@
                             <Trigger.Value>
                                 <s:Boolean>True</s:Boolean>
                             </Trigger.Value>
+                        </Trigger>
+                        <!-- Reemplaza al rectangulo punteado por defecto de WPF (que se quitó
+                             globalmente en App.xaml por no respetar esquinas redondeadas):
+                             sin esto, navegar con Tab no mostraba nada. -->
+                        <Trigger Property="UIElement.IsKeyboardFocused" Value="True">
+                            <Setter Property="Border.BorderBrush" TargetName="b" Value="{DynamicResource AccentBrush}" />
+                            <Setter Property="Border.BorderThickness" TargetName="b" Value="2,2,2,2" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -98,12 +106,12 @@
         </Setter>
         <Setter Property="Border.CornerRadius">
             <Setter.Value>
-                <CornerRadius>20,20,20,20</CornerRadius>
+                <CornerRadius>14,14,14,14</CornerRadius>
             </Setter.Value>
         </Setter>
         <Setter Property="Border.Padding">
             <Setter.Value>
-                <Thickness>18,18,18,18</Thickness>
+                <Thickness>16,16,16,16</Thickness>
             </Setter.Value>
         </Setter>
     </Style>
@@ -115,49 +123,17 @@
     <SolidColorBrush x:Key="BorderBrush">#FFE5E7EB</SolidColorBrush>
     <SolidColorBrush x:Key="CreamBrush">#FFFAF9F6</SolidColorBrush>
     <SolidColorBrush x:Key="AccentBrush">#FFDE7356</SolidColorBrush>
-    <DrawingImage x:Key="EyeLogo">
-        <DrawingImage.Drawing>
-            <DrawingGroup>
-                <DrawingGroup.Children>
-                    <GeometryDrawing Brush="#00FFFFFF">
-                        <GeometryDrawing.Geometry>
-                            <RectangleGeometry Rect="0,0,512,512" />
-                        </GeometryDrawing.Geometry>
-                    </GeometryDrawing>
-                    <DrawingGroup>
-                        <DrawingGroup.Children>
-                            <GeometryDrawing Brush="#FFF97316" Geometry="M235,185C185,140 175,105 200,95 225,85 235,130 245,185z M277,185C327,140 337,105 312,95 287,85 277,130 267,185z M256,185C235,120 235,80 256,80 277,80 277,120 256,185z M215,185C170,210 195,280 240,395 246,410 266,410 272,395 317,280 342,210 297,185 277,192 235,192 215,185z">
-                                <GeometryDrawing.Pen>
-                                    <Pen Brush="#FF7C390B" Thickness="14" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
-                                </GeometryDrawing.Pen>
-                            </GeometryDrawing>
-                            <GeometryDrawing Geometry="M222,250C235,258,267,258,282,250 M228,300C242,308,264,308,274,300 M235,350C245,356,262,356,269,350">
-                                <GeometryDrawing.Pen>
-                                    <Pen Brush="#FF7C390B" Thickness="10" StartLineCap="Round" EndLineCap="Round" />
-                                </GeometryDrawing.Pen>
-                            </GeometryDrawing>
-                        </DrawingGroup.Children>
-                        <DrawingGroup.Transform>
-                            <TransformGroup>
-                                <TransformGroup.Children>
-                                    <TranslateTransform X="-256" Y="-256" />
-                                    <ScaleTransform ScaleX="1.22" ScaleY="1.22" />
-                                    <TranslateTransform X="256" Y="256" />
-                                    <RotateTransform Angle="45" CenterX="256" CenterY="256" />
-                                </TransformGroup.Children>
-                            </TransformGroup>
-                        </DrawingGroup.Transform>
-                    </DrawingGroup>
-                </DrawingGroup.Children>
-            </DrawingGroup>
-        </DrawingImage.Drawing>
-    </DrawingImage>
+    <!-- Logo oficial (zanahoria), reemplaza al dibujo vectorial hecho a mano. Se mantiene
+         la misma clave EyeLogo para no tocar los ~5 lugares que ya la consumen. -->
+    <BitmapImage x:Key="EyeLogo" UriSource="pack://application:,,,/EyeYul;component/Recursos/carrot-logo.png" />
     <Color x:Key="BorderColor">#FFE5E7EB</Color>
     <SolidColorBrush x:Key="TerracottaDarkBrush">#FFCB5B3E</SolidColorBrush>
     <Color x:Key="OverlayBottomColor">#FF8C3C2A</Color>
     <SolidColorBrush x:Key="GreenBrush">#FF10B981</SolidColorBrush>
     <SolidColorBrush x:Key="AccentSoftBrush">#FFFBEBE5</SolidColorBrush>
     <SolidColorBrush x:Key="MutedBrush">#FF9CA3AF</SolidColorBrush>
+    <!-- Fondo oscurecido detras de los modales embebidos (Ajustes, Licencia). -->
+    <SolidColorBrush x:Key="OverlayBrush">#99000000</SolidColorBrush>
     <Color x:Key="SurfaceAltColor">#FFF9FAFB</Color>
     <Color x:Key="CreamColor">#FFFAF9F6</Color>
     <Color x:Key="PanelColor">#FFFAF9F6</Color>
@@ -166,6 +142,7 @@
         <Style.Resources>
             <ResourceDictionary />
         </Style.Resources>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Panel.Background">
             <Setter.Value>
                 <SolidColorBrush>#FFDE7356</SolidColorBrush>
@@ -204,7 +181,8 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Padding="{TemplateBinding Control.Padding}" CornerRadius="12,12,12,12" Background="{TemplateBinding Panel.Background}" Name="b">
+                    <Border Padding="{TemplateBinding Control.Padding}" CornerRadius="10,10,10,10" Background="{TemplateBinding Panel.Background}"
+                            BorderThickness="2,2,2,2" BorderBrush="Transparent" Name="b">
                         <ContentPresenter Content="{TemplateBinding ContentControl.Content}" ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}" ContentStringFormat="{TemplateBinding ContentControl.ContentStringFormat}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -217,6 +195,12 @@
                             <Trigger.Value>
                                 <s:Boolean>True</s:Boolean>
                             </Trigger.Value>
+                        </Trigger>
+                        <!-- Reemplaza al rectangulo punteado por defecto de WPF (quitado
+                             globalmente en App.xaml). Blanco porque el fondo ya es el acento
+                             naranja: un aro del mismo acento no se vería. -->
+                        <Trigger Property="UIElement.IsKeyboardFocused" Value="True">
+                            <Setter Property="Border.BorderBrush" TargetName="b" Value="White" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

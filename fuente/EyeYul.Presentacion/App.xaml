@@ -9,6 +9,13 @@
                 <ResourceDictionary Source="Temas/Icons.xaml" />
                 <ResourceDictionary Source="Temas/Controles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- El rectángulo punteado de foco por teclado de WPF es cuadrado y no respeta
+                 el CornerRadius de ningún botón de la app: se ve como una esquina rota
+                 sobre los botones redondeados. Sin estilo propio, ningún botón lo dibuja. -->
+            <Style TargetType="Button">
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

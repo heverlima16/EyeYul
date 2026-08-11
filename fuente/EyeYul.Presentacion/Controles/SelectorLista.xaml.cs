@@ -38,7 +38,10 @@ public partial class SelectorLista : UserControl
     {
         if (sender is Button { DataContext: string valor })
         {
-            Seleccionado = valor;
+            // SetCurrentValue en vez del setter CLR: asignar la propiedad directamente
+            // rompe el Binding TwoWay activo en Seleccionado (WPF lo reemplaza por un
+            // valor local), y el intervalo elegido dejaba de viajar al ViewModel.
+            SetCurrentValue(SeleccionadoProperty, valor);
         }
 
         Desplegable.IsOpen = false;

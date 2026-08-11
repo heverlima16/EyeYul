@@ -39,13 +39,22 @@
 
         <Style x:Key="NavItemButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="10,8">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="10,8"
+                                BorderThickness="2" BorderBrush="Transparent" Name="b">
                             <ContentPresenter VerticalAlignment="Center" />
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Reemplaza al rectangulo punteado por defecto de WPF (quitado
+                                 globalmente en App.xaml por no respetar esquinas redondeadas). -->
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="BorderBrush" TargetName="b" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -60,6 +69,7 @@
 
         <!-- Controles de ventana estilo Windows (minimizar/maximizar/cerrar) -->
         <Style x:Key="TitleBarButton" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Width" Value="44" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Background" Value="Transparent" />
@@ -113,9 +123,16 @@
                 CornerRadius="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState, Converter={StaticResource EstadoARadio}}">
         <Border ClipToBounds="True"
                 CornerRadius="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState, Converter={StaticResource EstadoARadio}}">
+            <Grid>
             <DockPanel>
-                <Border DockPanel.Dock="Top" Height="32" Background="Transparent">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Border DockPanel.Dock="Top" Height="32" Background="{DynamicResource PanelBrush}">
+                    <DockPanel LastChildFill="False">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" DockPanel.Dock="Left">
+                            <TextBlock Text="EyeYul" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="v1.2.0" VerticalAlignment="Center" FontFamily="{DynamicResource MonoFont}" FontSize="9" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBrush}" Background="{DynamicResource AccentSoftBrush}" Padding="6,2" Margin="10,0,0,0" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                         <Button Style="{StaticResource TitleBarButton}" Click="OnMinimizeClick" ToolTip="Minimizar"
                                 shell:WindowChrome.IsHitTestVisibleInChrome="True">
                             <Button.Content>
@@ -154,7 +171,8 @@
                                 </GeometryGroup>
                             </Button.Content>
                         </Button>
-                    </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
                 </Border>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -169,7 +187,7 @@
                         <StackPanel DockPanel.Dock="Bottom">
                             <!-- Unica entrada a la ventana de Ajustes desde la app;
                                  antes solo se llegaba por el menu de la bandeja. -->
-                            <Button Style="{StaticResource NavItemButton}" Command="{Binding OpenSettingsCommand}"
+                            <Button Style="{StaticResource NavItemButton}" Command="{Binding ToggleSettingsModalCommand}"
                                     Background="Transparent" Margin="0,0,0,4">
                                 <StackPanel Orientation="Horizontal">
                                     <Path Style="{StaticResource Ico}" Data="{StaticResource IcoSettings}" Width="15" Height="15" Stroke="{DynamicResource SubBrush}" />
@@ -224,16 +242,7 @@
 
                         <!-- Encabezado + búsqueda + nav -->
                         <StackPanel>
-                            <DockPanel x:Name="TitleBar" MouseLeftButtonDown="OnDragMove" Background="Transparent" LastChildFill="True">
-                                <TextBlock Text="v1.2.0" DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right"
-                                           FontFamily="{DynamicResource MonoFont}" FontSize="9" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
-                                           Background="{DynamicResource AccentSoftBrush}" Padding="6,2" />
-                                <TextBlock Text="EyeYul" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" Margin="10,0,0,0" />
-                            </DockPanel>
-
-                            <Border Height="1" Background="{DynamicResource CardBorderBrush}" Margin="0,12" Opacity="0.7" />
-
-                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Padding="8,0">
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Padding="8,0">
                                 <DockPanel>
                                     <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoSearch}" Width="13" Height="13" Stroke="{DynamicResource MutedBrush}" Opacity="0.6" DockPanel.Dock="Left" Margin="2,0,6,0" />
                                     <TextBox BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center" Height="30" FontSize="11" Foreground="{DynamicResource InkBrush}" />
@@ -311,7 +320,7 @@
                 <!-- ===================== CONTENIDO ===================== -->
                 <DockPanel Grid.Column="1">
                     <!-- Header -->
-                    <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="24,16">
+                    <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="24,10">
                         <DockPanel MouseLeftButtonDown="OnDragMove" Background="Transparent">
                             <StackPanel>
                                 <TextBlock Text="{Binding HeaderTitle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
@@ -324,13 +333,7 @@
                         <Grid>
                             <!-- ===== DASHBOARD ===== -->
                             <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StrToVis}, ConverterParameter=dashboard}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="7*" />
-                                    <ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="5*" />
-                                </Grid.ColumnDefinitions>
-
-                                <comp:TarjetaBase Grid.Column="0">
+                                <comp:TarjetaBase>
                                     <DockPanel>
                                         <comp:EtiquetaTitulo Texto="Monitor Inteligente" DockPanel.Dock="Top" />
 
@@ -347,31 +350,6 @@
                                         <c:AnilloProgreso Percent="{Binding Percent}" CenterText="{Binding TimerText}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,18" />
                                     </DockPanel>
                                 </comp:TarjetaBase>
-
-                                <!-- Panel derecho: stats -->
-                                <StackPanel Grid.Column="2">
-                                    <Grid Margin="0,0,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="14" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0" Style="{StaticResource Card}">
-                                            <StackPanel>
-                                                <Path Style="{StaticResource Ico}" Data="{StaticResource IcoFlame}" Width="18" Height="18" Stroke="#F97316" HorizontalAlignment="Left" />
-                                                <TextBlock Text="{Binding StreakText}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
-                                                <TextBlock Text="RACHA DE DÍAS" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                        </Border>
-                                        <Border Grid.Column="2" Style="{StaticResource Card}">
-                                            <StackPanel>
-                                                <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoAward}" Width="18" Height="18" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Left" />
-                                                <TextBlock Text="{Binding CompletedText}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,0" />
-                                                <TextBlock Text="PAUSAS COMPLETAS" Style="{StaticResource MonoLabel}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </StackPanel>
                             </Grid>
 
                             <!-- ===== STATS / Historial de Uso ===== -->
@@ -406,7 +384,7 @@
                                         </StackPanel>
                                     </Border>
                                 </Grid>
-                                <Border Style="{StaticResource Card}" CornerRadius="20" Margin="0,16,0,0">
+                                <Border Style="{StaticResource Card}" CornerRadius="14" Margin="0,16,0,0">
                                     <StackPanel>
                                         <TextBlock Text="Screen Score por Día" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource InkBrush}" />
                                         <TextBlock Text="Últimos 7 días hasta la fecha elegida" FontSize="10" Foreground="{DynamicResource SubBrush}" Margin="0,2,0,12" />
@@ -438,7 +416,7 @@
                                 </Grid.RowDefinitions>
 
                                 <!-- Postura -->
-                                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}" CornerRadius="20">
+                                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock Text="SALUD CORPORAL" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
@@ -466,7 +444,7 @@
                                 </Border>
 
                                 <!-- Parpadeo -->
-                                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource Card}" CornerRadius="20">
+                                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock Text="HUMECTACIÓN OCULAR" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
@@ -494,7 +472,7 @@
                                 </Border>
 
                                 <!-- Hidratacion -->
-                                <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}" CornerRadius="20">
+                                <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock Text="HIDRATACIÓN" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
@@ -522,11 +500,11 @@
                                 </Border>
 
                                 <!-- Estiramiento -->
-                                <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource Card}" CornerRadius="20">
+                                <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock Text="MOVIMIENTO" Style="{DynamicResource MonoLabel}" Foreground="{DynamicResource SubBrush}" />
-                                            <Path DockPanel.Dock="Right" Style="{DynamicResource Ico}" Data="{StaticResource IcoUserCheck}" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
+                                            <Path DockPanel.Dock="Right" Style="{DynamicResource Ico}" Data="{StaticResource IcoEstirar}" Stroke="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
                                         </DockPanel>
                                         <TextBlock Text="Recordatorio de Estiramiento" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,10,0,0" />
                                         <TextBlock Text="Una pausa cortita para estirar brazos, cuello y espalda." FontSize="10" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,4,0,10" />
@@ -555,7 +533,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" /><ColumnDefinition Width="18" /><ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource Card}" CornerRadius="20">
+                                <Border Grid.Column="0" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <TextBlock Text="FILTROS DE CONTEXTO" Style="{StaticResource MonoLabel}" Margin="0,0,0,12" />
                                         <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoVideo}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Reuniones / Videollamadas" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Pospone descansos durante Zoom, Meet, Teams." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
@@ -564,7 +542,7 @@
                                         <DockPanel><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoShare}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Grabación o Compartición" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Evita alertas si compartes pantalla." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
                                     </StackPanel>
                                 </Border>
-                                <Border Grid.Column="2" Style="{StaticResource Card}" CornerRadius="20">
+                                <Border Grid.Column="2" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <TextBlock Text="ACCIONES DE AUTOMATIZACIÓN" Style="{StaticResource MonoLabel}" Margin="0,0,0,12" />
                                         <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoSun}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Atenuar la Pantalla" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Baja el brillo gradualmente durante la pausa." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
@@ -817,6 +795,72 @@
                 </DockPanel>
             </Grid>
             </DockPanel>
+
+            <!-- ===================== MODAL: Ajustes / Licencia ===================== -->
+            <!-- Fondo oscurecido + panel centrado, embebido en la ventana en vez de una
+                 ventana de Windows aparte (estilo "modal" tipo Postman). -->
+            <Border Background="{DynamicResource OverlayBrush}"
+                    Visibility="{Binding IsSettingsModalOpen, Converter={StaticResource BoolToVis}}"
+                    MouseLeftButtonDown="OnCloseSettingsModalBackdropClick">
+                <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        CornerRadius="14" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24"
+                        MouseLeftButtonDown="OnStopClickPropagation">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.28" Color="#000000" />
+                    </Border.Effect>
+                    <Grid>
+                        <c:AjustesPanel DataContext="{Binding AjustesModal}" />
+                        <Button Style="{StaticResource TitleBarButton}" Width="30" Height="26"
+                                HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-16,-16,0"
+                                Command="{Binding CloseSettingsModalCommand}" ToolTip="Cerrar">
+                            <Button.Content>
+                                <GeometryGroup>
+                                    <LineGeometry StartPoint="0,0" EndPoint="10,10" />
+                                    <LineGeometry StartPoint="10,0" EndPoint="0,10" />
+                                </GeometryGroup>
+                            </Button.Content>
+                        </Button>
+                    </Grid>
+                </Border>
+            </Border>
+
+            <Border Background="{DynamicResource OverlayBrush}"
+                    Visibility="{Binding IsLicenseModalOpen, Converter={StaticResource BoolToVis}}"
+                    MouseLeftButtonDown="OnCloseLicenseModalBackdropClick">
+                <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        CornerRadius="14" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        MouseLeftButtonDown="OnStopClickPropagation">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.28" Color="#000000" />
+                    </Border.Effect>
+                    <StackPanel Margin="28,26,28,22">
+                        <Border Width="44" Height="44" CornerRadius="12" Background="{DynamicResource AccentSoftBrush}" HorizontalAlignment="Left">
+                            <Path Style="{StaticResource Ico}" Data="{StaticResource IcoAward}" Width="20" Height="20"
+                                  Stroke="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="Activar Premium" FontSize="15" FontWeight="Bold"
+                                   Foreground="{DynamicResource InkBrush}" Margin="0,16,0,6" />
+                        <TextBlock Text="{Binding LicenciaModalEstado}" FontSize="12.5" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SubBrush}" LineHeight="18" Margin="0,0,0,14" />
+
+                        <TextBlock Text="Clave de licencia" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding LicenciaModalClave, UpdateSourceTrigger=PropertyChanged}" Height="70" AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto" FontSize="11"
+                                 Background="{DynamicResource SurfaceAltBrush}" Foreground="{DynamicResource InkBrush}"
+                                 BorderBrush="{DynamicResource CardBorderBrush}" Padding="8" />
+
+                        <TextBlock Text="La clave no es válida." FontSize="11" Foreground="#EF4444" Margin="0,6,0,0"
+                                   Visibility="{Binding LicenciaModalErrorVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <DockPanel Margin="0,20,0,0">
+                            <Button Content="Cerrar" Style="{StaticResource GhostButton}" Command="{Binding CerrarLicenciaModalCommand}" DockPanel.Dock="Left" MinWidth="90" />
+                            <Button Content="Activar" Style="{StaticResource PrimaryButton}" Command="{Binding ActivarLicenciaCommand}"
+                                    HorizontalAlignment="Right" MinWidth="100" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+            </Grid>
         </Border>
         </Border>
     </Grid>

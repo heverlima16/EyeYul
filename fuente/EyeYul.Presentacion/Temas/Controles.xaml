@@ -19,13 +19,16 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
+                    <!-- PART_ContentHost va SIN Margin/Padding propio: cualquier margen ahi
+                         (fijo o via TemplateBinding a Padding) hace que el texto no se pinte
+                         (aunque el binding, Foreground y ActualWidth/Height sean correctos).
+                         TextBox ya respeta su propio Padding internamente sin necesidad de
+                         repetirlo aqui. -->
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="8">
-                        <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="Center" />
+                        <ScrollViewer x:Name="PART_ContentHost" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

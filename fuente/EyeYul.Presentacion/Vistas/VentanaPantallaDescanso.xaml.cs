@@ -10,7 +10,7 @@ public partial class VentanaPantallaDescanso : Window
     public VentanaPantallaDescanso()
     {
         InitializeComponent();
-        Loaded += (_, _) => DesenfoqueVentana.Habilitar(this, 0x59000000);
+        Loaded += (_, _) => DesenfoqueVentana.Habilitar(this, 0x22000000);
     }
 
     public void SetMessage(string message) => MessageText.Text = message;

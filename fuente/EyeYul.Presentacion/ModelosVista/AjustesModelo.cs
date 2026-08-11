@@ -2,12 +2,18 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EyeYul.Aplicacion.Abstracciones;
 using EyeYul.Aplicacion.Configuracion;
+using EyeYul.Presentacion.Vistas;
+using Microsoft.Win32;
 
 namespace EyeYul.Presentacion.ModelosVista;
 
 public sealed partial class AjustesModelo : ObservableObject
 {
+    private const string FiltroArchivoRespaldo = "Copia de seguridad EyeYul (*.yul)|*.yul";
+
     private readonly IAlmacenAjustes _store;
+
+    private readonly IRespaldoAjustes _respaldo;
 
     [ObservableProperty]
     private double _intervalMinutes;
@@ -81,9 +87,10 @@ public sealed partial class AjustesModelo : ObservableObject
 
     partial void OnDurationSecondsChanged(double value) => OnPropertyChanged(nameof(DurationSecondsText));
 
-    public AjustesModelo(IAlmacenAjustes store)
+    public AjustesModelo(IAlmacenAjustes store, IRespaldoAjustes respaldo)
     {
         _store = store;
+        _respaldo = respaldo;
         LoadFrom(store.Current);
     }
 
@@ -128,5 +135,60 @@ public sealed partial class AjustesModelo : ObservableObject
         await _store.SaveAsync(s);
 
         StatusMessage = $"Guardado {DateTime.Now:HH:mm:ss}";
+    }
+
+    [RelayCommand]
+    private async Task ExportarRespaldoAsync()
+    {
+        var dialog = new SaveFileDialog
+        {
+            Filter = FiltroArchivoRespaldo,
+            FileName = $"eyeyul-{DateTime.Now:yyyy-MM-dd}.yul"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await _respaldo.ExportarAsync(dialog.FileName);
+            StatusMessage = $"Copia de seguridad guardada {DateTime.Now:HH:mm:ss}";
+        }
+        catch (Exception ex)
+        {
+            VentanaDialogoAlerta.Mostrar("No se pudo exportar", $"No se pudo guardar la copia de seguridad.\n{ex.Message}", "IcoInfo");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportarRespaldoAsync()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = FiltroArchivoRespaldo
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            AjustesEyeYul importado = await _respaldo.ImportarAsync(dialog.FileName);
+            await _store.SaveAsync(importado);
+            LoadFrom(importado);
+            StatusMessage = $"Copia de seguridad restaurada {DateTime.Now:HH:mm:ss}";
+        }
+        catch (FormatoRespaldoInvalidoException ex)
+        {
+            VentanaDialogoAlerta.Mostrar("Archivo no válido", ex.Message, "IcoInfo");
+        }
+        catch (Exception ex)
+        {
+            VentanaDialogoAlerta.Mostrar("No se pudo importar", $"No se pudo restaurar la copia de seguridad.\n{ex.Message}", "IcoInfo");
+        }
     }
 }

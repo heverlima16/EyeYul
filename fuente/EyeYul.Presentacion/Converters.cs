@@ -105,7 +105,7 @@ public sealed class EstadoVentanaAMargenConverter : IValueConverter
 public sealed class EstadoVentanaARadioConverter : IValueConverter
 {
     public object Convert(object? valor, Type tipo, object? parametro, CultureInfo cultura) =>
-        valor is WindowState.Maximized ? new CornerRadius(0) : new CornerRadius(18);
+        valor is WindowState.Maximized ? new CornerRadius(0) : new CornerRadius(14);
 
     public object ConvertBack(object? valor, Type tipo, object? parametro, CultureInfo cultura) =>
         throw new NotSupportedException();

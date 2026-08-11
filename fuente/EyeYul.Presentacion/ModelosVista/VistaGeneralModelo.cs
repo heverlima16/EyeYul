@@ -57,7 +57,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     private string _timerText = "20:00";
 
     [ObservableProperty]
-    private double _percent = 100.0;
+    private double _percent;
 
     [ObservableProperty]
     private string _statusText = "TRABAJANDO";
@@ -88,12 +88,6 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
 
     [ObservableProperty]
     private int _estiramientoMinutos;
-
-    [ObservableProperty]
-    private string _streakText = "4 Días";
-
-    [ObservableProperty]
-    private string _completedText = "0";
 
     [ObservableProperty]
     private int _screenScore = 100;
@@ -222,8 +216,6 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     /// <summary>Se apaga cuando la ventana no esta visible para no gastar ciclos de UI.</summary>
     public bool ActualizacionesEnVivo { get; set; } = true;
 
-    public Action? OpenSettingsAction { get; set; }
-
     public string RoutineSelection => ActiveTab == "routine" ? ActiveSubTab : "";
 
     public string ActiveRoutineMode => _settings.Current.Descansos.Interval.TotalMinutes switch
@@ -306,12 +298,68 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
                 : "PRUEBA VENCIDA";
     }
 
+    [ObservableProperty]
+    private bool _isLicenseModalOpen;
+
+    [ObservableProperty]
+    private string _licenciaModalEstado = "";
+
+    [ObservableProperty]
+    private string _licenciaModalClave = "";
+
+    [ObservableProperty]
+    private bool _licenciaModalErrorVisible;
+
     [RelayCommand]
     private void AbrirLicencia()
     {
-        VentanaActivarLicencia.Mostrar(_licencia);
-        ActualizarLicencia();
+        IsSettingsModalOpen = false;
+        LicenciaModalClave = "";
+        LicenciaModalErrorVisible = false;
+        LicenciaModalEstado = _licencia.EsPremiumActivo
+            ? "Premium ya está activo en este equipo. Puedes pegar otra clave para reemplazarla."
+            : _licencia.DiasRestantesTrial > 0
+                ? $"Estás en el período de prueba: quedan {_licencia.DiasRestantesTrial} día(s) con todo desbloqueado. Pega tu clave para activar Premium para siempre."
+                : "El período de prueba terminó. Pega tu clave de licencia para reactivar las funciones Premium.";
+        IsLicenseModalOpen = true;
     }
+
+    [RelayCommand]
+    private void CerrarLicenciaModal() => IsLicenseModalOpen = false;
+
+    [RelayCommand]
+    private async Task ActivarLicenciaAsync()
+    {
+        string clave = LicenciaModalClave.Trim();
+        bool ok = clave.Length > 0 && await _licencia.ActivarAsync(clave);
+
+        if (ok)
+        {
+            IsLicenseModalOpen = false;
+            ActualizarLicencia();
+            VentanaDialogoAlerta.Mostrar("Premium activado", "Gracias por apoyar a EyeYul. Ya tienes todas las funciones desbloqueadas.", "IcoAward");
+            return;
+        }
+
+        LicenciaModalErrorVisible = true;
+    }
+
+    [ObservableProperty]
+    private bool _isSettingsModalOpen;
+
+    [ObservableProperty]
+    private AjustesModelo? _ajustesModal;
+
+    [RelayCommand]
+    private void ToggleSettingsModal()
+    {
+        IsLicenseModalOpen = false;
+        AjustesModal = App.Services.GetRequiredService<AjustesModelo>();
+        IsSettingsModalOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseSettingsModal() => IsSettingsModalOpen = false;
 
     private void OnTick(object? sender, TimeSpan remaining)
     {
@@ -325,9 +373,13 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
             TimeSpan interval = _settings.Current.Descansos.Interval;
 
             TimerText = $"{(int)remaining.TotalMinutes:00}:{remaining.Seconds:00}";
+
+            // Percent = progreso hacia la pausa (no tiempo restante): el anillo empieza vacio
+            // y se llena a medida que se acerca la pausa, quedando completo al llegar a cero.
+            double transcurrido = interval.TotalSeconds - remaining.TotalSeconds;
             Percent = interval.TotalSeconds > 0
-                ? Math.Clamp(remaining.TotalSeconds / interval.TotalSeconds * 100.0, 0.0, 100.0)
-                : 0.0;
+                ? Math.Clamp(transcurrido / interval.TotalSeconds * 100.0, 0.0, 100.0)
+                : 100.0;
 
             IsPaused = _scheduler.EstaEnPausa;
             PauseButtonText = IsPaused ? "Continuar" : "Pausar";
@@ -343,7 +395,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     {
         (HeaderTitle, HeaderSubtitle) = ActiveTab switch
         {
-            "dashboard" => ("Vista General (S.O. Cockpit)", "CONTROL EN VIVO DEL TEMPORIZADOR OCULAR"),
+            "dashboard" => ("Vista General (S.O. Cockpit)", "TEMPORIZADOR OCULAR"),
             "routine" => ("Rutina de Descansos Programados", "FRECUENCIA DE DESCANSOS Y HORAS DE OFICINA"),
             "wellness" => ("Acciones Saludables", "RECORDATORIOS CORTOS DE POSTURA, PARPADEO, HIDRATACIÓN Y ESTIRAMIENTO"),
             "automations" => ("Smart Pause (Reglas Automatizadas)", "REGLAS INTELIGENTES Y AUTOMATIZACIÓN"),
@@ -375,6 +427,12 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         ThemeMode = theme;
         _settings.Current.Appearance.Theme = theme;
         _ = _settings.SaveAsync(_settings.Current);
+
+        // Los Background/Foreground que pasan por Active*Converter (pastillas de minutos,
+        // tarjetas de modo, item de nav activo) solo releen Application.Resources cuando su
+        // propiedad de origen cambia (PosturaMinutos, ActiveRoutineMode...), no cuando cambia
+        // el tema. TemaAplicador ya mutó los brushes; esto fuerza a esos bindings a releerlos.
+        OnPropertyChanged(string.Empty);
     }
 
     [RelayCommand]
@@ -736,9 +794,6 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         _ = _settings.SaveAsync(_settings.Current);
     }
 
-    [RelayCommand]
-    private void OpenSettings() => OpenSettingsAction?.Invoke();
-
     /// <summary>"postura:20" -&gt; guarda 20 minutos de intervalo para la accion de postura. "0" es Off.</summary>
     [RelayCommand]
     private void SetAccionMinutos(string clave)
@@ -798,7 +853,6 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     {
         ResumenDiario summary = await _stats.ObtenerResumenDiarioAsync(_clock.Today);
         ScreenScore = summary.Puntaje;
-        CompletedText = summary.DescansosTomados.ToString();
 
         await RefreshHistorialAsync();
     }
