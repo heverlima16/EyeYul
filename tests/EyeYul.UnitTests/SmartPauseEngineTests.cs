@@ -72,10 +72,38 @@ public class SmartPauseEngineTests
     }
 
     [Fact]
-    public void ScreenRecording_AlwaysSuppressed()
+    public void ScreenRecording_IsSuppressed_WhenRespected()
     {
         Assert.Equal(
             DecisionPausa.SuprimirGrabacionPantalla,
             _engine.Evaluar(Snap(EstadoActividad.GrabandoPantalla), Defaults));
+    }
+
+    [Fact]
+    public void ScreenRecording_NotSuppressed_WhenDisabledInSettings()
+    {
+        var settings = new SmartPauseSettings { DetectScreenSharing = false };
+
+        Assert.Equal(
+            DecisionPausa.Permitir,
+            _engine.Evaluar(Snap(EstadoActividad.GrabandoPantalla), settings));
+    }
+
+    [Fact]
+    public void ActiveTyping_IsDeferred_WhenRespected()
+    {
+        var settings = new SmartPauseSettings { PauseOnActiveTyping = true };
+
+        Assert.Equal(
+            DecisionPausa.AplazarPorEscritura,
+            _engine.Evaluar(Snap(EstadoActividad.EscribiendoActivamente), settings));
+    }
+
+    [Fact]
+    public void ActiveTyping_Ignored_WhenNotRespected()
+    {
+        Assert.Equal(
+            DecisionPausa.Permitir,
+            _engine.Evaluar(Snap(EstadoActividad.EscribiendoActivamente), Defaults));
     }
 }

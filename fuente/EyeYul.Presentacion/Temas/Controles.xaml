@@ -81,6 +81,34 @@
         <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
     </Style>
 
+    <!-- Barra de progreso en pildora con relleno en gradiente (indice de fatiga ocular). -->
+    <Style TargetType="ProgressBar">
+        <Setter Property="Height" Value="8" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border CornerRadius="4" Background="{TemplateBinding Background}" ClipToBounds="True">
+                        <Grid>
+                            <Rectangle x:Name="PART_Track" Fill="Transparent" />
+                            <Decorator x:Name="PART_Indicator" HorizontalAlignment="Left">
+                                <Border CornerRadius="4">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#10B981" Offset="0" />
+                                            <GradientStop Color="#F59E0B" Offset="0.5" />
+                                            <GradientStop Color="#F43F5E" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Decorator>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!--
         El ScrollBar nativo se pinta con el chrome claro de Windows y se ve como
         una franja blanca dentro de un panel oscuro. Se retempla completo: solo

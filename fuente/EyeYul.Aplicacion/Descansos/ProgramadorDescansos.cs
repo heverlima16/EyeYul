@@ -22,6 +22,7 @@ public sealed class ProgramadorDescansos(
     PoliticaPausa politicaAplazamiento,
     ServicioDescansoProgramado descansosProgramados,
     IAutomationRunner automatizacion,
+    IControladorMultimedia multimedia,
     ServicioLicencia licencia,
     IReloj reloj,
     ILogger<ProgramadorDescansos> registro) : BackgroundService
@@ -225,6 +226,11 @@ public sealed class ProgramadorDescansos(
         if (premium)
         {
             await automatizacion.RunAsync(ajustes.General.OnBreakStartCommand, ct);
+        }
+
+        if (ajustes.SmartPause.PauseMusicOnBreak)
+        {
+            multimedia.AlternarReproduccion();
         }
 
         descanso.MarcarIniciado(reloj.Now);

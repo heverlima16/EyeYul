@@ -80,6 +80,12 @@ internal static partial class MetodosNativos
     [LibraryImport("shell32.dll")]
     internal static partial int SHQueryUserNotificationState(out QUERY_USER_NOTIFICATION_STATE pquns);
 
+    [LibraryImport("user32.dll")]
+    internal static partial short GetAsyncKeyState(int vKey);
+
+    [LibraryImport("user32.dll")]
+    internal static partial void keybd_event(byte bVk, byte bScan, uint dwFlags, nuint dwExtraInfo);
+
     // Las siguientes usan StringBuilder, que LibraryImport no admite: quedan como DllImport.
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]

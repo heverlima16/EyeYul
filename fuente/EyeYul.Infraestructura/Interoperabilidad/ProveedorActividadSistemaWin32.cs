@@ -76,6 +76,11 @@ public sealed class ProveedorActividadSistemaWin32(
             }
         }
 
+        if (DetectarEscrituraActiva())
+        {
+            state |= EstadoActividad.EscribiendoActivamente;
+        }
+
         return new ActivitySnapshot(state, proceso, titulo, idleTime);
     }
 
@@ -203,6 +208,52 @@ public sealed class ProveedorActividadSistemaWin32(
         {
             MetodosNativos.CloseHandle(handle);
         }
+    }
+
+    // Letras + digitos + espacio/backspace: no hace falta cubrir cada tecla del teclado,
+    // solo tener una muestra amplia para distinguir "tipeo real" de un par de atajos
+    // sueltos. GetAsyncKeyState no necesita hook global ni permisos elevados.
+    private static readonly int[] TeclasDeMuestra = BuildTeclasDeMuestra();
+
+    private static int[] BuildTeclasDeMuestra()
+    {
+        var teclas = new List<int>();
+        for (int letra = 0x41; letra <= 0x5A; letra++)
+        {
+            teclas.Add(letra);
+        }
+
+        for (int digito = 0x30; digito <= 0x39; digito++)
+        {
+            teclas.Add(digito);
+        }
+
+        teclas.Add(0x20); // Espacio
+        teclas.Add(0x08); // Retroceso
+        return [.. teclas];
+    }
+
+    /// <summary>Tipeo activo = varias teclas distintas presionadas desde la ultima muestra
+    /// (bit 0 de GetAsyncKeyState), no solo "hubo actividad" como <see cref="ObtenerTiempoInactivo"/>.</summary>
+    private static bool DetectarEscrituraActiva()
+    {
+        int pulsadas = 0;
+
+        foreach (int vk in TeclasDeMuestra)
+        {
+            short estado = MetodosNativos.GetAsyncKeyState(vk);
+            if ((estado & 0x0001) != 0)
+            {
+                pulsadas++;
+
+                if (pulsadas >= 3)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static TimeSpan ObtenerTiempoInactivo()

@@ -37,6 +37,7 @@ public partial class App : Application
 
                 services.AddSingleton<IControladorPantallaDescanso, ControladorPantallaDescansoWpf>();
                 services.AddSingleton<IControladorAccionSaludable, ControladorAccionSaludableWpf>();
+                services.AddSingleton<IControladorFiltroLuz, ControladorFiltroLuzWpf>();
                 services.AddSingleton<IServicioNotificacion, WpfNotificationService>();
                 services.AddSingleton<ControladorIconoBandeja>();
 
@@ -55,6 +56,10 @@ public partial class App : Application
         await Services.GetRequiredService<ServicioLicencia>().CargarAsync();
 
         await _host.StartAsync();
+
+        // Si quedo activado la ultima vez que se cerro la app, se reaplica al arrancar
+        // (igual que cualquier otro ajuste persistido): el usuario lo prendio a proposito.
+        Services.GetRequiredService<IControladorFiltroLuz>().Aplicar(settingsStore.Current.BlueLightFilter);
 
         ControladorIconoBandeja trayController = Services.GetRequiredService<ControladorIconoBandeja>();
         trayController.Initialize();
@@ -88,6 +93,11 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        // El overlay de luz azul es una ventana visible en pantalla completa: si la app
+        // se cierra sin quitarlo, el usuario se queda con el tinte pegado hasta reiniciar
+        // sesion. Se saca explicitamente antes de parar el host.
+        (Services?.GetService(typeof(IControladorFiltroLuz)) as IControladorFiltroLuz)?.Detener();
+
         if (_host is not null)
         {
             await _host.StopAsync(TimeSpan.FromSeconds(3));

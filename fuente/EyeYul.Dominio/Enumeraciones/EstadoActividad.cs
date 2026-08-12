@@ -10,5 +10,6 @@ public enum EstadoActividad
     Inactivo = 8,
     SesionBloqueada = 0x10,
     AsistenteConcentracion = 0x20,
-    GrabandoPantalla = 0x40
+    GrabandoPantalla = 0x40,
+    EscribiendoActivamente = 0x80
 }

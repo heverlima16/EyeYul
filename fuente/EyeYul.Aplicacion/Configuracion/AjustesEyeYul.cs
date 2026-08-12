@@ -13,6 +13,8 @@ public sealed class AjustesEyeYul
     public GeneralSettings General { get; set; } = new();
 
     public AccionesSaludablesSettings AccionesSaludables { get; set; } = new();
+
+    public BlueLightFilterSettings BlueLightFilter { get; set; } = new();
 }
 
 public sealed class BreakSettings
@@ -43,6 +45,14 @@ public sealed class SmartPauseSettings
     public bool RespectMediaPlayback { get; set; } = true;
 
     public bool RespectFocusAssist { get; set; } = true;
+
+    /// <summary>Ya se detectaba (grabadores de pantalla conocidos) pero sin ajuste para
+    /// apagarlo; el comportamiento historico equivale a <c>true</c>.</summary>
+    public bool DetectScreenSharing { get; set; } = true;
+
+    public bool PauseMusicOnBreak { get; set; }
+
+    public bool PauseOnActiveTyping { get; set; }
 
     public TimeSpan IdleThreshold { get; set; } = TimeSpan.FromMinutes(3);
 }
@@ -157,4 +167,22 @@ public sealed class AccionesSaludablesSettings
     public TimeSpan HidratacionIntervalo { get; set; } = TimeSpan.Zero;
 
     public TimeSpan EstiramientoIntervalo { get; set; } = TimeSpan.Zero;
+}
+
+/// <summary>
+/// Filtro de luz azul: tinte calido semitransparente superpuesto a toda la pantalla
+/// (no gamma ramp real, ver IControladorFiltroLuz). Apagado por defecto: es un efecto
+/// visual que cubre todos los monitores y no debe activarse solo porque si.
+/// </summary>
+public sealed class BlueLightFilterSettings
+{
+    public bool Enabled { get; set; }
+
+    public int KelvinTemp { get; set; } = 3200;
+
+    public int DimLevel { get; set; } = 15;
+
+    public bool AutoSchedule { get; set; }
+
+    public bool ReadingMode { get; set; }
 }

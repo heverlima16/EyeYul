@@ -40,9 +40,14 @@ public sealed class MotorPausaInteligente
             return DecisionPausa.SuprimirAsistenteConcentracion;
         }
 
-        if (estado.HasFlag(EstadoActividad.GrabandoPantalla))
+        if (ajustes.DetectScreenSharing && estado.HasFlag(EstadoActividad.GrabandoPantalla))
         {
             return DecisionPausa.SuprimirGrabacionPantalla;
+        }
+
+        if (ajustes.PauseOnActiveTyping && estado.HasFlag(EstadoActividad.EscribiendoActivamente))
+        {
+            return DecisionPausa.AplazarPorEscritura;
         }
 
         return DecisionPausa.Permitir;
@@ -60,7 +65,8 @@ public enum DecisionPausa
     SuprimirMedios,
     SuprimirAsistenteConcentracion,
     SuprimirGrabacionPantalla,
-    AplazarPorAusencia
+    AplazarPorAusencia,
+    AplazarPorEscritura
 }
 
 /// <summary>
@@ -77,6 +83,7 @@ public static class MotivoPausa
         DecisionPausa.SuprimirAsistenteConcentracion => "Modo No molestar activo",
         DecisionPausa.SuprimirGrabacionPantalla => "Grabacion de pantalla activa",
         DecisionPausa.AplazarPorAusencia => "Estabas ausente",
+        DecisionPausa.AplazarPorEscritura => "Escritura activa detectada",
         _ => "Pausa disponible"
     };
 }

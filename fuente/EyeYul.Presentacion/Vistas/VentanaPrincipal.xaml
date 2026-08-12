@@ -67,6 +67,25 @@
             <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
         </Style>
 
+        <!-- Pills clicables tipo "chip" (intervalo rapido del dashboard). -->
+        <Style x:Key="PillToggleButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="999" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Controles de ventana estilo Windows (minimizar/maximizar/cerrar) -->
         <Style x:Key="TitleBarButton" TargetType="Button">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -253,17 +272,27 @@
                             <TextBlock Text="MONITOR E HISTORIAL" Style="{StaticResource MonoLabel}" Margin="8,16,0,6" />
                             <Button Style="{StaticResource NavItemButton}" Command="{Binding SelectTabCommand}" CommandParameter="dashboard"
                                     Background="{Binding ActiveTab, Converter={StaticResource ActiveBg}, ConverterParameter=dashboard}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Style="{StaticResource Ico}" Data="{StaticResource IcoActivity}" Width="15" Height="15" Stroke="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=dashboard}" />
-                                    <TextBlock Text="Vista General" Margin="10,0,0,0" FontSize="12.5" Foreground="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=dashboard}" />
-                                </StackPanel>
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Style="{StaticResource PillBadge}" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource GreenBrush}" VerticalAlignment="Center">
+                                        <TextBlock Text="En Vivo" Style="{StaticResource PillBadgeText}" Foreground="{DynamicResource GreenBrush}" />
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoActivity}" Width="15" Height="15" Stroke="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=dashboard}" />
+                                        <TextBlock Text="Vista General" Margin="10,0,0,0" FontSize="12.5" Foreground="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=dashboard}" />
+                                    </StackPanel>
+                                </DockPanel>
                             </Button>
                             <Button Style="{StaticResource NavItemButton}" Command="{Binding SelectTabCommand}" CommandParameter="stats" Margin="0,4,0,0"
                                     Background="{Binding ActiveTab, Converter={StaticResource ActiveBg}, ConverterParameter=stats}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Style="{StaticResource Ico}" Data="{StaticResource IcoAward}" Width="15" Height="15" Stroke="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=stats}" />
-                                    <TextBlock Text="Historial de Uso" Margin="10,0,0,0" FontSize="12.5" Foreground="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=stats}" />
-                                </StackPanel>
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Style="{StaticResource PillBadge}" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AmberBrush}" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ScreenScore, StringFormat={}{0} pts}" Style="{StaticResource PillBadgeText}" Foreground="{DynamicResource AmberBrush}" />
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Style="{StaticResource Ico}" Data="{StaticResource IcoAward}" Width="15" Height="15" Stroke="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=stats}" />
+                                        <TextBlock Text="Historial de Uso" Margin="10,0,0,0" FontSize="12.5" Foreground="{Binding ActiveTab, Converter={StaticResource ActiveFg}, ConverterParameter=stats}" />
+                                    </StackPanel>
+                                </DockPanel>
                             </Button>
 
                             <!-- Grupo: Ajustes de Alerta -->
@@ -333,23 +362,126 @@
                         <Grid>
                             <!-- ===== DASHBOARD ===== -->
                             <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StrToVis}, ConverterParameter=dashboard}">
-                                <comp:TarjetaBase>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="7*" /><ColumnDefinition Width="18" /><ColumnDefinition Width="5*" />
+                                </Grid.ColumnDefinitions>
+
+                                <comp:TarjetaBase Grid.Column="0">
                                     <DockPanel>
                                         <comp:EtiquetaTitulo Texto="Monitor Inteligente" DockPanel.Dock="Top" />
+
+                                        <!-- Pills de intervalo rapido: mismo camino que el selector de abajo
+                                             (IntervaloMinutosText), solo un atajo para los valores mas usados. -->
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                                            <TextBlock Text="Intervalo:" VerticalAlignment="Center" FontSize="10" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource SubBrush}" Margin="0,0,8,0" />
+                                            <Button Content="15m" Style="{StaticResource PillToggleButton}" Command="{Binding SetIntervalMinutesCommand}" CommandParameter="15"
+                                                    Background="{Binding IntervaloMinutosText, Converter={StaticResource ActiveSolidBg}, ConverterParameter=15}"
+                                                    Foreground="{Binding IntervaloMinutosText, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=15}" Margin="0,0,4,0" />
+                                            <Button Content="20m" Style="{StaticResource PillToggleButton}" Command="{Binding SetIntervalMinutesCommand}" CommandParameter="20"
+                                                    Background="{Binding IntervaloMinutosText, Converter={StaticResource ActiveSolidBg}, ConverterParameter=20}"
+                                                    Foreground="{Binding IntervaloMinutosText, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=20}" Margin="0,0,4,0" />
+                                            <Button Content="30m" Style="{StaticResource PillToggleButton}" Command="{Binding SetIntervalMinutesCommand}" CommandParameter="30"
+                                                    Background="{Binding IntervaloMinutosText, Converter={StaticResource ActiveSolidBg}, ConverterParameter=30}"
+                                                    Foreground="{Binding IntervaloMinutosText, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=30}" Margin="0,0,4,0" />
+                                            <Button Content="45m" Style="{StaticResource PillToggleButton}" Command="{Binding SetIntervalMinutesCommand}" CommandParameter="45"
+                                                    Background="{Binding IntervaloMinutosText, Converter={StaticResource ActiveSolidBg}, ConverterParameter=45}"
+                                                    Foreground="{Binding IntervaloMinutosText, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=45}" Margin="0,0,4,0" />
+                                            <Button Content="60m" Style="{StaticResource PillToggleButton}" Command="{Binding SetIntervalMinutesCommand}" CommandParameter="60"
+                                                    Background="{Binding IntervaloMinutosText, Converter={StaticResource ActiveSolidBg}, ConverterParameter=60}"
+                                                    Foreground="{Binding IntervaloMinutosText, Converter={StaticResource ActiveWhiteFg}, ConverterParameter=60}" />
+                                        </StackPanel>
 
                                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
                                             <comp:BotonRelleno Comando="{Binding TogglePauseCommand}" Texto="{Binding PauseButtonText}" />
                                             <comp:BotonRelleno Comando="{Binding ResetCommand}" Texto="Reiniciar" />
-                                            <comp:BotonRelleno Comando="{Binding StartBreakCommand}" Texto="Descansar Ya" />
+                                            <Button Content="Descansar Ya" Style="{StaticResource PrimaryGradientButton}" Command="{Binding StartBreakCommand}" Margin="8,0,0,0" />
                                         </StackPanel>
                                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
                                             <TextBlock Text="Pausar cada" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="0,0,8,0" />
                                             <c:SelectorLista ItemsSource="{Binding IntervalosDisponibles}" Seleccionado="{Binding IntervaloMinutosText, Mode=TwoWay}" Width="80" Height="32" />
                                             <TextBlock Text="minutos" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource SubBrush}" Margin="8,0,0,0" />
                                         </StackPanel>
-                                        <c:AnilloProgreso Percent="{Binding Percent}" CenterText="{Binding TimerText}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,18" />
+                                        <c:AnilloProgreso Percent="{Binding Percent}" CenterText="{Binding TimerText}" RingBrush="{StaticResource AccentGradientBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,18" />
                                     </DockPanel>
                                 </comp:TarjetaBase>
+
+                                <StackPanel Grid.Column="2">
+                                    <!-- Indice de fatiga ocular: derivado del Screen Score real de hoy, no un
+                                         numero simulado. -->
+                                    <Border Style="{StaticResource Card}">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}">
+                                                        <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoEye}" Width="15" Height="15" Stroke="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <StackPanel Margin="10,0,0,0">
+                                                        <TextBlock Text="Índice de Fatiga Ocular" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                                        <TextBlock Text="Estimado con el Screen Score de hoy" FontSize="9" Foreground="{DynamicResource SubBrush}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <Border DockPanel.Dock="Right" Style="{StaticResource PillBadge}" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding EyeStrainIndexPercent, StringFormat={}{0}%}" Style="{StaticResource PillBadgeText}" Foreground="{DynamicResource AccentBrush}" />
+                                                </Border>
+                                            </DockPanel>
+                                            <ProgressBar Value="{Binding EyeStrainIndexPercent, Mode=OneWay}" Margin="0,12,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Consejo del momento: reusa las Frases de Bienestar reales en vez de
+                                         simular un sensor de parpadeo (no hay forma de medirlo sin camara). -->
+                                    <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}">
+                                                    <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoSparkles}" Width="15" Height="15" Stroke="{DynamicResource AmberBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Consejo del Momento" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                                    <TextBlock Text="De tus Frases de Bienestar" FontSize="9" Foreground="{DynamicResource SubBrush}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding TipDelMomento}" FontSize="11" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Filtro de luz azul: acceso rapido real (toggle + temperatura). Cubre
+                                         toda la pantalla con un tinte via ControladorFiltroLuzWpf. -->
+                                    <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}">
+                                                        <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoSun}" Width="15" Height="15" Stroke="{DynamicResource AmberBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <StackPanel Margin="10,0,0,0">
+                                                        <TextBlock Text="Filtro de Luz Azul" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                                        <TextBlock Foreground="{DynamicResource SubBrush}" FontSize="9">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="Desactivado" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding BlueLightEnabled}" Value="True">
+                                                                            <Setter Property="Text" Value="{Binding BlueLightKelvin, StringFormat={}{0}K · tono cálido}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <CheckBox DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="{Binding BlueLightEnabled}" />
+                                            </DockPanel>
+                                            <StackPanel Margin="0,12,0,0" Visibility="{Binding BlueLightEnabled, Converter={StaticResource BoolToVis}}">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Left" Text="Temperatura cálida" FontSize="9" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource SubBrush}" />
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding BlueLightKelvin, StringFormat={}{0} K}" FontSize="9" FontFamily="{StaticResource MonoFont}" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                                                </DockPanel>
+                                                <Slider Minimum="1800" Maximum="6500" Value="{Binding BlueLightKelvin}" IsSnapToTickEnabled="True" TickFrequency="100" Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
                             </Grid>
 
                             <!-- ===== STATS / Historial de Uso ===== -->
@@ -533,22 +665,43 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" /><ColumnDefinition Width="18" /><ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+                                <!-- No incluye "Modo No Molestar": Windows no da una API publica para que una
+                                     app de terceros ACTIVE Focus Assist, solo para leerlo (eso ya se respeta
+                                     arriba en RespectFocusAssist). Prometer un toggle que no hace nada es peor
+                                     que no tenerlo. -->
                                 <Border Grid.Column="0" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <TextBlock Text="FILTROS DE CONTEXTO" Style="{StaticResource MonoLabel}" Margin="0,0,0,12" />
-                                        <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoVideo}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Reuniones / Videollamadas" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Pospone descansos durante Zoom, Meet, Teams." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
-                                        <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoTv}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Reproducción de Video" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Detecta pantalla completa (Youtube, Netflix)." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
-                                        <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoGamepad}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Juegos en Pantalla Completa" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="No interrumpe partidas de gaming activas." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
-                                        <DockPanel><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoShare}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Grabación o Compartición" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Evita alertas si compartes pantalla." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
+                                        <DockPanel Margin="0,0,0,12">
+                                            <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoVideo}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" />
+                                            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Top" IsChecked="{Binding SmartPauseRespectMeetings}" />
+                                            <StackPanel Margin="10,0,10,0"><TextBlock Text="Reuniones / Videollamadas" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Pospone descansos durante Zoom, Meet, Teams." FontSize="9" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" /></StackPanel>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,0,0,12">
+                                            <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoTv}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" />
+                                            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Top" IsChecked="{Binding SmartPauseRespectFullscreen}" />
+                                            <StackPanel Margin="10,0,10,0"><TextBlock Text="Pantalla Completa" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Video o juegos: no interrumpe si algo ocupa toda la pantalla." FontSize="9" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" /></StackPanel>
+                                        </DockPanel>
+                                        <DockPanel>
+                                            <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoShare}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" />
+                                            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Top" IsChecked="{Binding SmartPauseDetectScreenSharing}" />
+                                            <StackPanel Margin="10,0,10,0"><TextBlock Text="Grabación o Compartición" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Evita alertas si estás grabando o compartiendo pantalla." FontSize="9" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" /></StackPanel>
+                                        </DockPanel>
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Column="2" Style="{StaticResource Card}" CornerRadius="14">
                                     <StackPanel>
                                         <TextBlock Text="ACCIONES DE AUTOMATIZACIÓN" Style="{StaticResource MonoLabel}" Margin="0,0,0,12" />
-                                        <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoSun}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Atenuar la Pantalla" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Baja el brillo gradualmente durante la pausa." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
-                                        <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoVolumeX}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Pausar Reproducción de Música" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Pausa Spotify/Youtube al iniciar el descanso." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
-                                        <DockPanel Margin="0,0,0,12"><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoMoon}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Modo &quot;No Molestar&quot;" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Silencia notificaciones durante tus descansos." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
-                                        <DockPanel><Path Style="{DynamicResource Ico}" Data="{StaticResource IcoActivity}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" /><StackPanel Margin="10,0,0,0"><TextBlock Text="Pausar por Escritura Activa" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Pospone 2 min la pausa si estás escribiendo rápido." FontSize="9" Foreground="{DynamicResource SubBrush}" /></StackPanel></DockPanel>
+                                        <DockPanel Margin="0,0,0,12">
+                                            <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoVolumeX}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" />
+                                            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Top" IsChecked="{Binding SmartPausePauseMusic}" />
+                                            <StackPanel Margin="10,0,10,0"><TextBlock Text="Pausar Reproducción de Música" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Envía Play/Pausa al iniciar el descanso." FontSize="9" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" /></StackPanel>
+                                        </DockPanel>
+                                        <DockPanel>
+                                            <Path Style="{DynamicResource Ico}" Data="{StaticResource IcoActivity}" Width="15" Height="15" Stroke="{StaticResource AccentBrush}" VerticalAlignment="Top" />
+                                            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Top" IsChecked="{Binding SmartPausePauseOnTyping}" />
+                                            <StackPanel Margin="10,0,10,0"><TextBlock Text="Pausar por Escritura Activa" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><TextBlock Text="Pospone la pausa mientras detecta tipeo activo." FontSize="9" Foreground="{DynamicResource SubBrush}" TextWrapping="Wrap" /></StackPanel>
+                                        </DockPanel>
                                     </StackPanel>
                                 </Border>
                             </Grid>

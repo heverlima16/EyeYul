@@ -1,0 +1,16 @@
+<Window x:Class="EyeYul.Presentacion.Vistas.VentanaFiltroLuz"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False"
+        AllowsTransparency="True" Topmost="True" Background="Transparent"
+        Title="EyeYul — Filtro de luz azul">
+    <!-- Dos capas semitransparentes en vez de una sola: el tinte calido (color segun
+         Kelvin) y la atenuacion (negro segun DimLevel) se calculan independientemente
+         en ControladorFiltroLuzWpf, así que viven en Borders separados. La ventana se
+         hace click-through (WindowNative.MakeClickThrough) despues de mostrarse: no
+         debe robarle el mouse a lo que este debajo. -->
+    <Grid IsHitTestVisible="False">
+        <Border x:Name="Tinte" Background="Transparent" />
+        <Border x:Name="Atenuacion" Background="Transparent" />
+    </Grid>
+</Window>

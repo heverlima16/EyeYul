@@ -15,6 +15,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IReloj, SystemClock>();
         services.AddSingleton<IProveedorActividadSistema, ProveedorActividadSistemaWin32>();
+        services.AddSingleton<IControladorMultimedia, ControladorMultimediaWin32>();
 
         services.AddSingleton<BaseDatosSqlite>();
         services.AddSingleton<IBreakRepository, RepositorioDescanso>();

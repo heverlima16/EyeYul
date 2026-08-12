@@ -30,6 +30,8 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
 
     private readonly ServicioLicencia _licencia;
 
+    private readonly IControladorFiltroLuz _filtroLuz;
+
     private static readonly (DayOfWeek Dia, string Etiqueta)[] DiasDeLaSemana =
     [
         (DayOfWeek.Monday, "L"),
@@ -91,6 +93,67 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
 
     [ObservableProperty]
     private int _screenScore = 100;
+
+    /// <summary>Estimacion de fatiga ocular a partir del Screen Score real del dia
+    /// (100 - puntaje): no hay forma de medir parpadeo real sin camara, asi que en vez
+    /// de simular un numero al azar (como hace el mockup de referencia) se deriva de la
+    /// unica metrica de salud visual que la app ya calcula de verdad.</summary>
+    public int EyeStrainIndexPercent => 100 - ScreenScore;
+
+    partial void OnScreenScoreChanged(int value) => OnPropertyChanged(nameof(EyeStrainIndexPercent));
+
+    [ObservableProperty]
+    private string _tipDelMomento = "";
+
+    [ObservableProperty]
+    private bool _blueLightEnabled;
+
+    [ObservableProperty]
+    private int _blueLightKelvin;
+
+    partial void OnBlueLightEnabledChanged(bool value) => GuardarYAplicarFiltroLuz();
+
+    partial void OnBlueLightKelvinChanged(int value) => GuardarYAplicarFiltroLuz();
+
+    private void GuardarYAplicarFiltroLuz()
+    {
+        BlueLightFilterSettings luz = _settings.Current.BlueLightFilter;
+        luz.Enabled = BlueLightEnabled;
+        luz.KelvinTemp = BlueLightKelvin;
+        _ = _settings.SaveAsync(_settings.Current);
+        _filtroLuz.Aplicar(luz);
+    }
+
+    [ObservableProperty]
+    private bool _smartPauseRespectMeetings;
+
+    [ObservableProperty]
+    private bool _smartPauseRespectFullscreen;
+
+    [ObservableProperty]
+    private bool _smartPauseDetectScreenSharing;
+
+    [ObservableProperty]
+    private bool _smartPausePauseMusic;
+
+    [ObservableProperty]
+    private bool _smartPausePauseOnTyping;
+
+    partial void OnSmartPauseRespectMeetingsChanged(bool value) => GuardarSmartPause(s => s.RespectMeetings = value);
+
+    partial void OnSmartPauseRespectFullscreenChanged(bool value) => GuardarSmartPause(s => s.RespectFullscreen = value);
+
+    partial void OnSmartPauseDetectScreenSharingChanged(bool value) => GuardarSmartPause(s => s.DetectScreenSharing = value);
+
+    partial void OnSmartPausePauseMusicChanged(bool value) => GuardarSmartPause(s => s.PauseMusicOnBreak = value);
+
+    partial void OnSmartPausePauseOnTypingChanged(bool value) => GuardarSmartPause(s => s.PauseOnActiveTyping = value);
+
+    private void GuardarSmartPause(Action<SmartPauseSettings> aplicar)
+    {
+        aplicar(_settings.Current.SmartPause);
+        _ = _settings.SaveAsync(_settings.Current);
+    }
 
     [ObservableProperty]
     private DateTime? _historialFecha = DateTime.Today;
@@ -165,6 +228,10 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
     public static IReadOnlyList<string> IntervalosDisponibles { get; } =
         new[] { 5, 10, 15, 20, 25, 30, 45, 60, 90, 120 }.Select(m => m.ToString()).ToList();
 
+    /// <summary>Pills de intervalo rapido del dashboard ("Pausar cada").</summary>
+    public static IReadOnlyList<string> IntervalosRapidos { get; } =
+        new[] { 15, 20, 30, 45, 60 }.Select(m => m.ToString()).ToList();
+
     /// <summary>Espejo en texto del intervalo entre pausas, editable desde la tarjeta "Monitor Inteligente".</summary>
     public string IntervaloMinutosText
     {
@@ -181,6 +248,13 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
             Reset();
             OnPropertyChanged(nameof(ActiveRoutineMode));
         }
+    }
+
+    [RelayCommand]
+    private void SetIntervalMinutes(string minutos)
+    {
+        IntervaloMinutosText = minutos;
+        OnPropertyChanged(nameof(IntervaloMinutosText));
     }
 
     public static IReadOnlyList<string> HorasDisponibles { get; } = ConstruirHorasDisponibles();
@@ -260,7 +334,8 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         ServicioEstadisticas stats,
         IReloj clock,
         ServicioDescansoProgramado plannedBreaks,
-        ServicioLicencia licencia)
+        ServicioLicencia licencia,
+        IControladorFiltroLuz filtroLuz)
     {
         _scheduler = scheduler;
         _settings = settings;
@@ -268,6 +343,7 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         _clock = clock;
         _plannedBreaks = plannedBreaks;
         _licencia = licencia;
+        _filtroLuz = filtroLuz;
 
         ThemeMode = settings.Current.Appearance.Theme;
         TemaAplicador.Aplicar(ThemeMode);
@@ -280,12 +356,32 @@ public sealed partial class VistaGeneralModelo : ObservableObject, IDisposable
         HidratacionMinutos = (int)acciones.HidratacionIntervalo.TotalMinutes;
         EstiramientoMinutos = (int)acciones.EstiramientoIntervalo.TotalMinutes;
 
+        BlueLightFilterSettings luz = settings.Current.BlueLightFilter;
+        _blueLightEnabled = luz.Enabled;
+        _blueLightKelvin = luz.KelvinTemp;
+
+        SmartPauseSettings smartPause = settings.Current.SmartPause;
+        _smartPauseRespectMeetings = smartPause.RespectMeetings;
+        _smartPauseRespectFullscreen = smartPause.RespectFullscreen;
+        _smartPauseDetectScreenSharing = smartPause.DetectScreenSharing;
+        _smartPausePauseMusic = smartPause.PauseMusicOnBreak;
+        _smartPausePauseOnTyping = smartPause.PauseOnActiveTyping;
+
         _scheduler.Tic += OnTick;
 
         _ = RefreshStatsAsync();
         _ = RefreshPlannedBreaksAsync();
 
         RefreshFrases();
+        ElegirTipDelMomento();
+    }
+
+    private void ElegirTipDelMomento()
+    {
+        List<FraseBienestar> activas = _settings.Current.Appearance.Frases.Where(f => f.Habilitada).ToList();
+        TipDelMomento = activas.Count > 0
+            ? activas[Random.Shared.Next(activas.Count)].Texto
+            : "Parpadea despacio unas cuantas veces. Tus ojos lo agradecen.";
     }
 
     private void ActualizarLicencia()
